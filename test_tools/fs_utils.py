@@ -205,13 +205,14 @@ def uncompress_archive(file, destination=None):
 
 def ls(path, options=''):
     default_options = "-lA --time-style=+'%Y-%m-%d %H:%M:%S'"
-    output = TestRun.executor.run_expect_success(
+    output = TestRun.executor.run(
         f"ls {default_options} {options} {path}")
     return output.stdout
 
 
 def ls_item(path):
-    return ls(path, '-d').splitlines()[0]
+    output = ls(path, '-d')
+    return output.splitlines()[0] if output else None
 
 
 def parse_ls_output(ls_output, dir_path=''):
