@@ -249,7 +249,7 @@ class FioParam(LinuxCommand):
         raise ValueError("Argument out of range. Should be 0-100.")
 
     def target(self, target):
-        if target is Device:
+        if isinstance(target, Device):
             return self.file_name(target.system_path)
         return self.file_name(target)
 
