@@ -2,6 +2,7 @@
 # Copyright(c) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
+
 from storage_devices.disk import Disk, DiskType
 
 
@@ -9,17 +10,16 @@ class Dut:
     def __init__(self, dut_info):
         self.disks = []
         for disk_info in dut_info.get('disks', []):
-            self.disks.append(Disk(disk_info['path'],
-                                   DiskType[disk_info['type']],
-                                   disk_info['serial'],
-                                   disk_info['blocksize']))
+            self.disks.append(Disk.create_disk(disk_info['path'],
+                                               DiskType[disk_info['type']],
+                                               disk_info['serial'],
+                                               disk_info['blocksize']))
         self.disks.sort(key=lambda disk: disk.disk_type, reverse=True)
 
         self.ipmi = dut_info['ipmi'] if 'ipmi' in dut_info else None
         self.spider = dut_info['spider'] if 'spider' in dut_info else None
         self.wps = dut_info['wps'] if 'wps' in dut_info else None
         self.env = dut_info['env'] if 'env' in dut_info else None
-
 
     def __str__(self):
         dut_str = f'ipmi: {self.ipmi}\n' if self.ipmi is not None else ''

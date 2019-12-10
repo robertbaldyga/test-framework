@@ -9,6 +9,7 @@ from IPy import IP
 
 from connection.ssh_executor import SshExecutor
 from connection.local_executor import LocalExecutor
+from storage_devices.disk import Disk
 from test_utils import disk_finder
 from test_utils.dut import Dut
 import core.test_run
@@ -107,6 +108,7 @@ def __setup(cls, dut_config):
         if not cls.executor.is_remote():
             pytest.skip()
 
+    Disk.plug_all_disks()
     if dut_config.get('allow_disk_autoselect', False):
         dut_config["disks"] = disk_finder.find_disks()
 
