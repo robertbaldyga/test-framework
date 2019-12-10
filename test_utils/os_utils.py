@@ -7,7 +7,7 @@ import time
 
 from aenum import IntFlag, Enum
 from packaging import version
-
+from datetime import timedelta, datetime
 from core.test_run import TestRun
 from test_utils.filesystem.file import File
 
@@ -106,15 +106,15 @@ def kill_all_io():
         raise Exception(f"Failed to stop vdbench!")
 
 
-def wait(predicate, timeout, interval=None):
-    start = time.time()
+def wait(predicate, timeout: timedelta, interval: timedelta = None):
+    start_time = datetime.now()
     result = False
-    while time.time() - start < timeout:
+    while start_time + timeout > datetime.now():
         result = predicate()
         if result:
             break
         if interval is not None:
-            time.sleep(interval)
+            time.sleep(interval.total_seconds())
     return result
 
 
