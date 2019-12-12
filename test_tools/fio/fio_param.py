@@ -228,6 +228,9 @@ class FioParam(LinuxCommand):
     def verify(self, value: VerifyMethod):
         return self.set_param('verify', value.name)
 
+    def verify_pattern(self, pattern=None):
+        return self.set_param('verify_pattern', pattern or self.get_verification_pattern())
+
     def verify_backlog(self, value: int):
         return self.set_param('verify_backlog', value)
 
@@ -237,13 +240,16 @@ class FioParam(LinuxCommand):
     def verify_fatal(self, value: bool = True):
         return self.set_param('verify_fatal', int(value))
 
+    def verify_only(self, value: bool = True):
+        return self.set_flags('verify_only') if value else self.remove_param('verify_only')
+
     def write_percentage(self, value: int):
         if value <= 100:
             return self.set_param('rwmixwrite', value)
         raise ValueError("Argument out of range. Should be 0-100.")
 
     def target(self, target):
-        if target is Device:
+        if isinstance(target, Device):
             return self.file_name(target.system_path)
         return self.file_name(target)
 
