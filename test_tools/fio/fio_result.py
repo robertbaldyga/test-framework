@@ -39,9 +39,7 @@ class FioResult:
         return s
 
     def total_errors(self):
-        if hasattr(self.result, 'total_err'):
-            return self.result.total_err
-        return 0
+        return getattr(self.job, 'total_err', 0)
 
     def disks_name(self):
         disks_name = []
