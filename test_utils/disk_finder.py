@@ -87,6 +87,37 @@ def discover_ssd_devices(block_devices, devices_res):
         block_devices.remove(dev)
 
 
+def get_disk_serial_number(dev_path):
+    commands = [
+        f"udevadm info --query=all --name={dev_path} | grep 'SCSI.*_SERIAL' || "
+        f"udevadm info --query=all --name={dev_path} | grep 'ID_SERIAL_SHORT' | "
+        "awk --field-separator '=' '{print $NF}'",
+        f"sg_inq /dev/{dev_path} 2> /dev/null | grep 'Unit serial number:' | "
+        "awk '{print $NF}'",
+        f"udevadm info --query=all --name={dev_path} | grep 'ID_SERIAL' | "
+        "awk --field-separator '=' '{print $NF}'"
+    ]
+    for command in commands:
+        serial = TestRun.executor.run(command).stdout
+        if serial:
+            return serial
+    return None
+
+
+def get_all_serial_numbers():
+    block_devices = []
+    serial_numbers = {}
+    get_block_devices_list(block_devices)
+    for dev in block_devices:
+        serial = get_disk_serial_number(dev)
+        if serial:
+            serial_numbers[serial] = dev
+        else:
+            TestRun.LOGGER.warning(f"Device {dev} does not have a serial number.")
+            serial_numbers[dev] = dev
+    return serial_numbers
+
+
 def find_sata_ssd_device_path(serial_number, block_devices):
     for dev in block_devices:
         dev_serial = TestRun.executor.run_expect_success(
