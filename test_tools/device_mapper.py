@@ -252,7 +252,7 @@ class DeviceMapper(LinuxCommand):
         )
 
 
-class ErrorDevice:
+class ErrorDevice(Device):
     def __init__(self, name: str, base_device: Device, table: DmTable = None):
         self.device = base_device
         self.mapper = DeviceMapper(name)
