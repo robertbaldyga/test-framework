@@ -93,7 +93,6 @@ class SshExecutor(BaseExecutor):
         with TestRun.group("Waiting for DUT ssh connection"):
             while start_time + timeout > datetime.now():
                 try:
-                    TestRun.LOGGER.info(f"{(datetime.now() - start_time).total_seconds()}s...")
                     self.connect(user=self.user, passwd=self.password, port=self.port)
                     return
                 except Exception:
