@@ -163,6 +163,17 @@ def replace_in_lines(file, pattern, new_string, regexp=False):
     return TestRun.executor.run_expect_success(cmd)
 
 
+def append_line(file, string):
+    cmd = f"echo '{string}' >> {file}"
+    return TestRun.executor.run_expect_success(cmd)
+
+
+def remove_lines(file, pattern, regexp=False):
+    pattern = escape_sed_string(pattern)
+    cmd = f"sed -i{' -r' if regexp else ''} '/{pattern}/d' {file}"
+    return TestRun.executor.run_expect_success(cmd)
+
+
 def read_file(file):
     if not file.strip():
         raise ValueError("File path cannot be empty or whitespace.")
