@@ -16,8 +16,8 @@ class Device:
         self.filesystem = None
         self.mount_point = None
 
-    def create_filesystem(self, fs_type: disk_utils.Filesystem):
-        if disk_utils.create_filesystem(self, fs_type):
+    def create_filesystem(self, fs_type: disk_utils.Filesystem, force=True, blocksize=None):
+        if disk_utils.create_filesystem(self, fs_type, force, blocksize):
             self.filesystem = fs_type
 
     def is_mounted(self):
@@ -34,8 +34,7 @@ class Device:
             if disk_utils.mount(self, mount_point):
                 self.mount_point = mount_point
         else:
-            TestRun.LOGGER.error(
-                f"Device is already mounted! Actual mount point: {self.mount_point}")
+            raise Exception(f"Device is already mounted! Actual mount point: {self.mount_point}")
 
     def unmount(self):
         if not self.is_mounted():

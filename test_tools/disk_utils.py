@@ -11,6 +11,7 @@ from enum import Enum
 from core.test_run import TestRun
 from test_tools import fs_utils
 from test_tools.dd import Dd
+from test_utils.output import CmdException
 from test_utils.size import Size, Unit
 
 
@@ -45,17 +46,13 @@ def create_filesystem(device, filesystem: Filesystem, force=True, blocksize=None
     block_size_param = f' -b size={blocksize}' if filesystem == Filesystem.xfs \
         else f' -b {blocksize}'
     block_size_param = block_size_param if blocksize else ''
-    cmd = f'mkfs.{filesystem.name}{force_param}{device.system_path}{block_size_param}'
+    cmd = f'mkfs.{filesystem.name} {force_param} {device.system_path} {block_size_param}'
     cmd = re.sub(' +', ' ', cmd)
     output = TestRun.executor.run(cmd)
-    if output.exit_code == 0:
-        TestRun.LOGGER.info(
-            f"Successfully created filesystem on device: {device.system_path}")
-        return True
-
-    TestRun.LOGGER.error(
-        f"Could not create filesystem: {output.stderr}\n{output.stdout}")
-    return False
+    if output.exit_code != 0:
+        raise CmdException("Could not create filesystem.", output)
+    TestRun.LOGGER.info(
+        f"Successfully created filesystem on device: {device.system_path}")
 
 
 def create_partition_table(device, partition_table_type: PartitionTable = PartitionTable.gpt):
@@ -229,10 +226,8 @@ def mount(device, mount_point):
     cmd = f"mount {device.system_path} {mount_point}"
     output = TestRun.executor.run(cmd)
     if output.exit_code != 0:
-        TestRun.LOGGER.error(f"Failed to mount {device.system_path} to {mount_point}")
-        return False
+        raise Exception(f"Failed to mount {device.system_path} to {mount_point}")
     device.mount_point = mount_point
-    return True
 
 
 def unmount(device):
