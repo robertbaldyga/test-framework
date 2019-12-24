@@ -4,10 +4,11 @@
 #
 
 import time
+from datetime import timedelta, datetime
 
 from aenum import IntFlag, Enum
 from packaging import version
-from datetime import timedelta, datetime
+
 from core.test_run import TestRun
 from test_utils.filesystem.file import File
 
@@ -68,6 +69,13 @@ class ModuleRemoveMethod(Enum):
 def is_kernel_module_loaded(module_name):
     output = TestRun.executor.run(f"lsmod | grep ^{module_name}")
     return output.exit_code == 0
+
+
+def is_mounted(path: str):
+    if path is None or path.isspace():
+        raise Exception("Checked path cannot be empty")
+    command = f"mount | grep --fixed-strings '{path.rstrip('/')} '"
+    return TestRun.executor.run(command).exit_code == 0
 
 
 def load_kernel_module(module_name, module_args: {str, str}=None):
