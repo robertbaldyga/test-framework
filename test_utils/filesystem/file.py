@@ -14,7 +14,6 @@ from core.test_run import TestRun
 class File(FsItem):
     def __init__(self, full_path):
         FsItem.__init__(self, full_path)
-        self.md5 = self.md5sum()
 
     def compare(self, other_file):
         return fs_utils.compare(str(self), str(other_file))
