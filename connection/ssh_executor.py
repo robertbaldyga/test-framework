@@ -63,7 +63,7 @@ class SshExecutor(BaseExecutor):
         for exclude in exclude_list:
             options.append(f"--exclude {exclude}")
 
-        subprocess.run(
+        completed_process = subprocess.run(
             f'sshpass -p "{self.password}" '
             f'rsync -r -e "ssh -p {self.port} -o UserKnownHostsFile=/dev/null '
             f'-o StrictHostKeyChecking=no" '
@@ -72,6 +72,9 @@ class SshExecutor(BaseExecutor):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout.total_seconds())
+
+        if completed_process.returncode:
+            raise Exception(f"rsync failed:\n{completed_process}")
 
     def is_remote(self):
         return True
