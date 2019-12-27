@@ -46,6 +46,7 @@ def drop_caches(level: DropCachesMode = DropCachesMode.PAGECACHE):
 
 
 def download_file(url, destination_dir="/tmp"):
+    #TODO use wget module instead
     command = ("wget --tries=3 --timeout=5 --continue --quiet "
                f"--directory-prefix={destination_dir} {url}")
     output = TestRun.executor.run(command)
