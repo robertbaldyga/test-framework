@@ -93,6 +93,13 @@ class FioParam(LinuxCommand):
     def block_size(self, size: Size):
         return self.set_param('blocksize', int(size))
 
+    def blocksize_range(self, ranges):
+        value = []
+        for bs_range in ranges:
+            str_range = str(int(bs_range[0])) + '-' + str(int(bs_range[1]))
+            value.append(str_range)
+        return self.set_param('blocksize_range', ",".join(value))
+
     def bs_split(self, value):
         return self.set_param('bssplit', value)
 
@@ -125,6 +132,13 @@ class FioParam(LinuxCommand):
 
     def file_size(self, size: Size):
         return self.set_param('filesize', int(size))
+
+    def file_size_range(self, ranges):
+        value = []
+        for bs_range in ranges:
+            str_range = str(int(bs_range[0])) + '-' + str(int(bs_range[1]))
+            value.append(str_range)
+        return self.set_param('filesize', ",".join(value))
 
     def fsync(self, value: int):
         return self.set_param('fsync', value)
