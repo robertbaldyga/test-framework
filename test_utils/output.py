@@ -13,7 +13,7 @@ class Output:
         self.exit_code = return_code
 
     def __str__(self):
-        return f"stdout: {self.stdout}\nstderr: {self.stderr}"
+        return f"exit_code: {self.exit_code}\nstdout: {self.stdout}\nstderr: {self.stderr}"
 
 
 class CmdException(Exception):
