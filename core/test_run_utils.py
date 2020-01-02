@@ -12,6 +12,7 @@ from connection.local_executor import LocalExecutor
 from storage_devices.disk import Disk
 from test_utils import disk_finder
 from test_utils.dut import Dut
+from core.plugins import PluginManager
 import core.test_run
 import traceback
 
@@ -27,6 +28,10 @@ def __configure(cls, config):
     )
     config.addinivalue_line(
         "markers",
+        "require_plugin(name, *kwargs): require specific plugins, otherwise skip"
+    )
+    config.addinivalue_line(
+        "markers",
         "remote_only: run test only in case of remote execution, otherwise skip"
     )
 
@@ -35,8 +40,13 @@ TestRun.configure = __configure
 
 
 @classmethod
-def __prepare(cls, item):
+def __prepare(cls, item, config):
+    if not config:
+        raise Exception("You need to specify DUT config!")
+
     cls.item = item
+    cls.config = config
+
     req_disks = list(map(lambda mark: mark.args, cls.item.iter_markers(name="require_disk")))
     cls.req_disks = dict(req_disks)
     if len(req_disks) != len(cls.req_disks):
@@ -79,27 +89,28 @@ TestRun.__setup_disks = __setup_disks
 
 
 @classmethod
-def __setup(cls, dut_config):
-    if not dut_config:
-        TestRun.block("You need to specify DUT config!")
-    if dut_config['type'] == 'ssh':
+def __setup(cls):
+    cls.plugin_manager = PluginManager(cls.item, cls.config)
+    cls.plugin_manager.hook_pre_setup()
+
+    if cls.config['type'] == 'ssh':
         try:
-            IP(dut_config['ip'])
+            IP(cls.config['ip'])
         except ValueError:
             TestRun.block("IP address from config is in invalid format.")
 
-        port = dut_config.get('port', 22)
+        port = cls.config.get('port', 22)
 
-        if 'user' in dut_config and 'password' in dut_config:
+        if 'user' in cls.config and 'password' in cls.config:
             cls.executor = SshExecutor(
-                dut_config['ip'],
-                dut_config['user'],
-                dut_config['password'],
+                cls.config['ip'],
+                cls.config['user'],
+                cls.config['password'],
                 port
             )
         else:
             TestRun.block("There are no credentials in config.")
-    elif dut_config['type'] == 'local':
+    elif cls.config['type'] == 'local':
         cls.executor = LocalExecutor()
     else:
         TestRun.block("Execution type (local/ssh) is missing in DUT config!")
@@ -109,15 +120,17 @@ def __setup(cls, dut_config):
             pytest.skip()
 
     Disk.plug_all_disks()
-    if dut_config.get('allow_disk_autoselect', False):
-        dut_config["disks"] = disk_finder.find_disks()
+    if cls.config.get('allow_disk_autoselect', False):
+        cls.config["disks"] = disk_finder.find_disks()
 
     try:
-        cls.dut = Dut(dut_config)
+        cls.dut = Dut(cls.config)
     except Exception as ex:
         raise Exception(f"Failed to setup DUT instance:\n"
                         f"{str(ex)}\n{traceback.format_exc()}")
     cls.__setup_disks()
+
+    cls.plugin_manager.hook_post_setup()
 
 
 TestRun.setup = __setup
@@ -140,3 +153,11 @@ def __makereport(cls, item, call, res):
 
 
 TestRun.makereport = __makereport
+
+
+@classmethod
+def __teardown(cls):
+    cls.plugin_manager.hook_teardown()
+
+
+TestRun.teardown = __teardown
