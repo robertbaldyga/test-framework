@@ -76,6 +76,11 @@ class SshExecutor(BaseExecutor):
     def is_remote(self):
         return True
 
+    def reboot(self):
+        self.run("reboot")
+        self.wait_for_connection_loss()
+        self.wait_for_connection()
+
     def is_active(self):
         try:
             self.ssh.exec_command('', timeout=5)
@@ -88,9 +93,18 @@ class SshExecutor(BaseExecutor):
         with TestRun.group("Waiting for DUT ssh connection"):
             while start_time + timeout > datetime.now():
                 try:
-                    TestRun.LOGGER.info(f"{(datetime.now() - start_time).total_seconds()}s...")
                     self.connect(user=self.user, passwd=self.password, port=self.port)
                     return
                 except Exception:
                     continue
             raise ConnectionError("Timeout occurred while tying to establish ssh connection")
+
+    def wait_for_connection_loss(self, timeout: timedelta = timedelta(minutes=10)):
+        start_time = datetime.now()
+        with TestRun.group("Waiting for DUT ssh connection loss"):
+            while start_time + timeout > datetime.now():
+                try:
+                    self.ssh.exec_command(":", timeout=timeout.total_seconds())
+                except paramiko.SSHException:
+                    return
+            raise ConnectionError("Timeout occurred before ssh connection loss")
