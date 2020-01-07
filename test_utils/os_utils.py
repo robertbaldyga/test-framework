@@ -11,6 +11,8 @@ from datetime import timedelta, datetime
 from core.test_run import TestRun
 from test_utils.filesystem.file import File
 
+DEBUGFS_MOUNT_POINT = "/sys/kernel/debug"
+
 
 class DropCachesMode(IntFlag):
     PAGECACHE = 1
@@ -81,6 +83,18 @@ def load_kernel_module(module_name, module_args: {str, str}=None):
 def unload_kernel_module(module_name, unload_method: ModuleRemoveMethod = ModuleRemoveMethod.rmmod):
     cmd = f"{unload_method.value} {module_name}"
     return TestRun.executor.run(cmd)
+
+
+def is_mounted(path: str):
+    if path is None or path.isspace():
+        raise Exception("Checked path cannot be empty")
+    command = f"mount | grep --fixed-strings '{path.rstrip('/')} '"
+    return TestRun.executor.run(command).exit_code == 0
+
+
+def mount_debugfs():
+    if not is_mounted(DEBUGFS_MOUNT_POINT):
+        TestRun.executor.run_expect_success(f"mount -t debugfs none {DEBUGFS_MOUNT_POINT}")
 
 
 def reload_kernel_module(module_name, module_args: {str, str}=None):
