@@ -105,6 +105,6 @@ class SshExecutor(BaseExecutor):
             while start_time + timeout > datetime.now():
                 try:
                     self.ssh.exec_command(":", timeout=timeout.total_seconds())
-                except paramiko.SSHException:
+                except (paramiko.SSHException, ConnectionResetError):
                     return
             raise ConnectionError("Timeout occurred before ssh connection loss")
