@@ -99,12 +99,12 @@ class SshExecutor(BaseExecutor):
                     continue
             raise ConnectionError("Timeout occurred while tying to establish ssh connection")
 
-    def wait_for_connection_loss(self, timeout: timedelta = timedelta(minutes=10)):
-        start_time = datetime.now()
+    def wait_for_connection_loss(self, timeout: timedelta = timedelta(minutes=1)):
         with TestRun.group("Waiting for DUT ssh connection loss"):
-            while start_time + timeout > datetime.now():
+            end_time = datetime.now() + timeout
+            while end_time > datetime.now():
                 try:
-                    self.ssh.exec_command(":", timeout=timeout.total_seconds())
-                except paramiko.SSHException:
+                    self.ssh.exec_command(":", timeout=30)
+                except (paramiko.SSHException, ConnectionResetError):
                     return
             raise ConnectionError("Timeout occurred before ssh connection loss")
