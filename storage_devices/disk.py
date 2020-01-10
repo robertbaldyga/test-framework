@@ -6,9 +6,8 @@ import itertools
 from enum import IntEnum
 from test_utils import disk_finder
 from test_utils.output import CmdException
-from test_utils.size import Size, Unit
+from test_utils.size import Unit
 from test_tools import disk_utils, fs_utils
-from storage_devices.partition import Partition
 from storage_devices.device import Device
 from datetime import timedelta
 from test_utils.os_utils import wait
@@ -109,36 +108,7 @@ class Disk(Device):
             sizes: [],
             partition_table_type=disk_utils.PartitionTable.gpt
     ):
-        if disk_utils.create_partition_table(self, partition_table_type):
-            self.partition_table = partition_table_type
-            partition_type = disk_utils.PartitionType.primary
-
-            partition_number_offset = 0
-            for s in sizes:
-                size = Size(
-                    s.get_value(self.block_size) - self.block_size.value, self.block_size)
-                if partition_table_type == disk_utils.PartitionTable.msdos and \
-                        len(sizes) > 4 and len(self.partitions) == 3:
-                    disk_utils.create_partition(self,
-                                                Size.zero(),
-                                                4,
-                                                disk_utils.PartitionType.extended,
-                                                Unit.MebiByte,
-                                                True)
-                    partition_type = disk_utils.PartitionType.logical
-                    partition_number_offset = 1
-
-                partition_number = len(self.partitions) + 1 + partition_number_offset
-                if disk_utils.create_partition(self,
-                                               size,
-                                               partition_number,
-                                               partition_type,
-                                               Unit.MebiByte,
-                                               True):
-                    new_part = Partition(self,
-                                         partition_type,
-                                         partition_number)
-                    self.partitions.append(new_part)
+        disk_utils.create_partitions(self, sizes, partition_table_type)
 
     def umount_all_partitions(self):
         TestRun.LOGGER.info(
