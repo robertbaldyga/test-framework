@@ -16,8 +16,8 @@ class Device:
         self.mount_point = None
 
     def create_filesystem(self, fs_type: disk_utils.Filesystem, force=True, blocksize=None):
-        if disk_utils.create_filesystem(self, fs_type, force, blocksize):
-            self.filesystem = fs_type
+        disk_utils.create_filesystem(self, fs_type, force, blocksize)
+        self.filesystem = fs_type
 
     def is_mounted(self):
         output = TestRun.executor.run(f"findmnt {self.system_path}")
