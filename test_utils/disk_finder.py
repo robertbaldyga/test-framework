@@ -5,6 +5,9 @@
 
 from core.test_run import TestRun
 from test_tools import disk_utils
+from test_tools.fs_utils import check_if_file_exists
+from test_utils import os_utils
+from test_utils.output import CmdException
 
 
 def find_disks():
@@ -14,7 +17,7 @@ def find_disks():
     TestRun.LOGGER.info("Finding platform's disks.")
 
     # TODO: isdct should be implemented as a separate tool in the future.
-    #  There will be isdct installator in case, when it is not installed
+    #  There will be isdct installer in case, when it is not installed
     output = TestRun.executor.run('isdct')
     if output.exit_code != 0:
         raise Exception(f"Error while executing command: 'isdct'.\n"
@@ -31,10 +34,10 @@ def find_disks():
 
 def get_block_devices_list(block_devices):
     devices = TestRun.executor.run_expect_success("ls /sys/block -1").stdout.splitlines()
-    os_disk = get_system_disk()
+    os_disks = get_system_disks()
 
     for dev in devices:
-        if ('sd' in dev or 'nvme' in dev) and dev != os_disk:
+        if ('sd' in dev or 'nvme' in dev) and dev not in os_disks:
             block_devices.append(dev)
 
 
@@ -127,6 +130,41 @@ def find_sata_ssd_device_path(serial_number, block_devices):
     return None
 
 
-def get_system_disk():
-    system_partition = TestRun.executor.run_expect_success('mount | grep " / "').stdout.split()[0]
-    return TestRun.executor.run_expect_success(f'lsblk -no pkname {system_partition}').stdout
+def get_system_disks():
+    system_device = TestRun.executor.run_expect_success('mount | grep " / "').stdout.split()[0]
+    readlink_output = \
+        TestRun.executor.run_expect_success(f'readlink -f {system_device}').stdout
+    device_name = readlink_output.split('/')[-1]
+    sys_block_path = os_utils.get_sys_block_path()
+    used_device_names = __get_slaves(device_name)
+    if not used_device_names:
+        used_device_names = [device_name]
+    disk_names = []
+    for device_name in used_device_names:
+        if check_if_file_exists(f'{sys_block_path}/{device_name}/partition'):
+            parent_device = TestRun.executor.run_expect_success(
+                f'readlink -f {sys_block_path}/{device_name}/..').stdout.split('/')[-1]
+            disk_names.append(parent_device)
+        else:
+            disk_names.append(device_name)
+
+    return disk_names
+
+
+def __get_slaves(device_name: str):
+    try:
+        device_names = TestRun.executor.run_expect_success(
+            f'ls {os_utils.get_sys_block_path()}/{device_name}/slaves').stdout.splitlines()
+    except CmdException as e:
+        if "No such file or directory" not in e.output.stderr:
+            raise
+        return None
+    device_list = []
+    for device_name in device_names:
+        slaves = __get_slaves(device_name)
+        if slaves:
+            for slave in slaves:
+                device_list.append(slave)
+        else:
+            device_list.append(device_name)
+    return device_list
