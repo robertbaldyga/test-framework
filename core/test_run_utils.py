@@ -64,6 +64,7 @@ def __setup_disk(cls, disk_name, disk_type):
     ))
     if not cls.disks[disk_name]:
         pytest.skip("Unable to find requested disk!")
+    cls.disks[disk_name].remove_partitions()
 
 
 TestRun.__setup_disk = __setup_disk

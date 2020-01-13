@@ -50,6 +50,10 @@ class Device:
         output = fs_utils.ls(f"$(find -L {directory} -samefile {self.system_path})")
         return fs_utils.parse_ls_output(output, self.system_path)
 
+    def __str__(self):
+        return f'system path: {self.system_path}, filesystem: {self.filesystem}, ' \
+               f'mount point: {self.mount_point}, size: {self.size}'
+
     @staticmethod
     def get_scsi_debug_devices():
         scsi_debug_devices = TestRun.executor.run_expect_success("lsscsi | grep scsi_debug").stdout

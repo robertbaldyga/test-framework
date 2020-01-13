@@ -160,6 +160,12 @@ def create_partitions(device, sizes: [], partition_table_type=PartitionTable.gpt
                 new_part = Partition(device,
                                      partition_type,
                                      partition_number)
+                dd = Dd().input("/dev/zero") \
+                    .output(new_part.system_path) \
+                    .count(1) \
+                    .block_size(Size(1, Unit.Blocks4096)) \
+                    .oflag("direct")
+                dd.run()
                 device.partitions.append(new_part)
 
 
@@ -244,7 +250,8 @@ def remove_partitions(device):
     dd = Dd().input("/dev/zero") \
         .output(device.system_path) \
         .count(1) \
-        .block_size(Size(device.block_size.value, Unit.Byte))
+        .block_size(Size(1, Unit.Blocks4096))\
+        .oflag("direct")
     dd.run()
     output = TestRun.executor.run(f"ls {device.system_path}* -1")
     if len(output.stdout.split('\n')) > 1:
