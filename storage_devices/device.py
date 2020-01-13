@@ -1,10 +1,11 @@
 #
-# Copyright(c) 2019 Intel Corporation
+# Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
 from core.test_run import TestRun
 from test_tools import disk_utils
+from test_utils.io_stats import IoStats
 from test_utils.size import Size, Unit
 
 
@@ -49,6 +50,9 @@ class Device:
         from test_tools import fs_utils
         output = fs_utils.ls(f"$(find -L {directory} -samefile {self.system_path})")
         return fs_utils.parse_ls_output(output, self.system_path)
+
+    def get_io_stats(self):
+        return IoStats.get_io_stats(self.system_path.replace('/dev/', ''))
 
     def __str__(self):
         return f'system path: {self.system_path}, filesystem: {self.filesystem}, ' \
