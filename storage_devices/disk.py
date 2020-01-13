@@ -4,6 +4,7 @@
 #
 import itertools
 from enum import IntEnum
+
 from test_utils import disk_finder
 from test_utils.output import CmdException
 from test_utils.size import Unit
@@ -106,8 +107,7 @@ class Disk(Device):
     def create_partitions(
             self,
             sizes: [],
-            partition_table_type=disk_utils.PartitionTable.gpt
-    ):
+            partition_table_type=disk_utils.PartitionTable.gpt):
         disk_utils.create_partitions(self, sizes, partition_table_type)
 
     def umount_all_partitions(self):
@@ -131,6 +131,9 @@ class Disk(Device):
             else:
                 self.device_name = serial_numbers[self.serial_number]
                 self.system_path = f"/dev/{self.device_name}"
+                for part in self.partitions:
+                    part.system_path = disk_utils.get_partition_path(
+                        part.parent_device.system_path, part.number)
                 return True
         elif self.system_path:
             output = fs_utils.ls_item(f"{self.system_path}")
