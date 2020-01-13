@@ -12,6 +12,8 @@ from packaging import version
 from core.test_run import TestRun
 from test_utils.filesystem.file import File
 
+DEBUGFS_MOUNT_POINT = "/sys/kernel/debug"
+
 
 class DropCachesMode(IntFlag):
     PAGECACHE = 1
@@ -23,20 +25,12 @@ class Udev(object):
     @staticmethod
     def enable():
         TestRun.LOGGER.info("Enabling udev")
-        output = TestRun.executor.run("udevadm control --start-exec-queue")
-        if output.exit_code != 0:
-            raise Exception(
-                f"Enabling udev failed. stdout: {output.stdout} \n stderr :{output.stderr}"
-            )
+        TestRun.executor.run_expect_success("udevadm control --start-exec-queue")
 
     @staticmethod
     def disable():
         TestRun.LOGGER.info("Disabling udev")
-        output = TestRun.executor.run("udevadm control --stop-exec-queue")
-        if output.exit_code != 0:
-            raise Exception(
-                f"Disabling udev failed. stdout: {output.stdout} \n stderr :{output.stderr}"
-            )
+        TestRun.executor.run_expect_success("udevadm control --stop-exec-queue")
 
 
 def drop_caches(level: DropCachesMode = DropCachesMode.PAGECACHE):
@@ -45,12 +39,10 @@ def drop_caches(level: DropCachesMode = DropCachesMode.PAGECACHE):
 
 
 def download_file(url, destination_dir="/tmp"):
+    # TODO use wget module instead
     command = ("wget --tries=3 --timeout=5 --continue --quiet "
                f"--directory-prefix={destination_dir} {url}")
-    output = TestRun.executor.run(command)
-    if output.exit_code != 0:
-        raise Exception(
-            f"Download failed. stdout: {output.stdout} \n stderr :{output.stderr}")
+    TestRun.executor.run_expect_success(command)
     path = f"{destination_dir.rstrip('/')}/{File.get_name(url)}"
     return File(path)
 
@@ -88,7 +80,19 @@ def load_kernel_module(module_name, module_args: {str, str}=None):
 
 def unload_kernel_module(module_name, unload_method: ModuleRemoveMethod = ModuleRemoveMethod.rmmod):
     cmd = f"{unload_method.value} {module_name}"
-    return TestRun.executor.run(cmd)
+    return TestRun.executor.run_expect_success(cmd)
+
+
+def is_mounted(path: str):
+    if path is None or path.isspace():
+        raise Exception("Checked path cannot be empty")
+    command = f"mount | grep --fixed-strings '{path.rstrip('/')} '"
+    return TestRun.executor.run(command).exit_code == 0
+
+
+def mount_debugfs():
+    if not is_mounted(DEBUGFS_MOUNT_POINT):
+        TestRun.executor.run_expect_success(f"mount -t debugfs none {DEBUGFS_MOUNT_POINT}")
 
 
 def reload_kernel_module(module_name, module_args: {str, str}=None):
@@ -127,7 +131,4 @@ def wait(predicate, timeout: timedelta, interval: timedelta = None):
 
 
 def sync():
-    output = TestRun.executor.run("sync")
-    if output.exit_code != 0:
-        raise Exception(
-            f"Sync command failed. stdout: {output.stdout} \n stderr :{output.stderr}")
+    TestRun.executor.run_expect_success("sync")
