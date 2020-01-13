@@ -100,7 +100,7 @@ def create_partition(
         if part_size != Size.zero() else '100%'
 
     cmd = f'parted --script {device.system_path} mkpart ' \
-        f'{part_type.name} {begin}{unit_to_string(unit)} {end}'
+          f'{part_type.name} {begin}{unit_to_string(unit)} {end}'
     output = TestRun.executor.run(cmd)
 
     if output.exit_code == 0:
@@ -127,6 +127,40 @@ def create_partition(
             return True
 
     raise Exception(f"Could not create partition: {output.stderr}\n{output.stdout}")
+
+
+def create_partitions(device, sizes: [], partition_table_type=PartitionTable.gpt):
+    from storage_devices.partition import Partition
+    if create_partition_table(device, partition_table_type):
+        device.partition_table = partition_table_type
+        partition_type = PartitionType.primary
+
+        partition_number_offset = 0
+        for s in sizes:
+            size = Size(
+                s.get_value(device.block_size) - device.block_size.value, device.block_size)
+            if partition_table_type == PartitionTable.msdos and \
+                    len(sizes) > 4 and len(device.partitions) == 3:
+                create_partition(device,
+                                 Size.zero(),
+                                 4,
+                                 PartitionType.extended,
+                                 Unit.MebiByte,
+                                 True)
+                partition_type = PartitionType.logical
+                partition_number_offset = 1
+
+            partition_number = len(device.partitions) + 1 + partition_number_offset
+            if create_partition(device,
+                                size,
+                                partition_number,
+                                partition_type,
+                                Unit.MebiByte,
+                                True):
+                new_part = Partition(device,
+                                     partition_type,
+                                     partition_number)
+                device.partitions.append(new_part)
 
 
 def get_block_size(device):
