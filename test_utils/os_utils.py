@@ -10,6 +10,7 @@ from aenum import IntFlag, Enum
 from packaging import version
 
 from core.test_run import TestRun
+from test_tools.fs_utils import check_if_directory_exists
 from test_utils.filesystem.file import File
 
 DEBUGFS_MOUNT_POINT = "/sys/kernel/debug"
@@ -63,11 +64,11 @@ def is_kernel_module_loaded(module_name):
     return output.exit_code == 0
 
 
-def is_mounted(path: str):
-    if path is None or path.isspace():
-        raise Exception("Checked path cannot be empty")
-    command = f"mount | grep --fixed-strings '{path.rstrip('/')} '"
-    return TestRun.executor.run(command).exit_code == 0
+def get_sys_block_path():
+    sys_block = "/sys/class/block"
+    if not check_if_directory_exists(sys_block):
+        sys_block = "/sys/block"
+    return sys_block
 
 
 def load_kernel_module(module_name, module_args: {str, str}=None):
