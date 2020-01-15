@@ -299,3 +299,13 @@ def unit_to_string(unit):
         Unit.TeraByte: 'TB'
     }
     return unit_string.get(unit, "Invalid unit.")
+
+
+def wipe_filesystem(device, force=True):
+    TestRun.LOGGER.info(
+        f"Deleting filesystem ({device.filesystem.name}) on device: {device.system_path}")
+    force_param = ' -f' if force else ''
+    cmd = f'wipefs -a{force_param} {device.system_path}'
+    TestRun.executor.run_expect_success(cmd)
+    TestRun.LOGGER.info(
+        f"Successfully wiped filesystem from device: {device.system_path}")

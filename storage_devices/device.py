@@ -19,6 +19,10 @@ class Device:
         disk_utils.create_filesystem(self, fs_type, force, blocksize)
         self.filesystem = fs_type
 
+    def wipe_filesystem(self, force=True):
+        disk_utils.wipe_filesystem(self, force)
+        self.filesystem = None
+
     def is_mounted(self):
         output = TestRun.executor.run(f"findmnt {self.system_path}")
         if output.exit_code != 0:
