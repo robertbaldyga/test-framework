@@ -77,7 +77,6 @@ class FileProperties:
         self.group = file.group
         self.permissions = file.permissions
         self.size = file.size
-        self.md5 = file.md5
 
     @staticmethod
     def get_parent_dir(path):
@@ -94,6 +93,6 @@ class FileProperties:
         return tail or ntpath.basename(head)
 
     def __eq__(self, other):
-        return (self.md5 == other.md5 and self.permissions == other.permissions
-                and self.size == other.size and self.owner == other.owner
-                and self.group == other.group and self.name == other.name)
+        return (self.permissions == other.permissions and self.size == other.size
+                and self.owner == other.owner and self.group == other.group
+                and self.name == other.name)
