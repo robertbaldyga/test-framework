@@ -5,10 +5,10 @@
 
 
 from log.base_log import BaseLog, escape
+from log.html_iteration_log import HtmlIterationLog
 from log.html_log_config import HtmlLogConfig
 from log.html_main_log import HtmlMainLog
 from log.html_setup_log import HtmlSetupLog
-from log.html_iteration_log import HtmlIterationLog
 
 
 class HtmlLogManager(BaseLog):
@@ -95,7 +95,6 @@ class HtmlLogManager(BaseLog):
     def error(self, message):
         self._current_log.error(escape(message))
         self.__add("error: " + message)
-        self.end_all_groups()
 
     def blocked(self, message):
         self._current_log.blocked(escape(message))
