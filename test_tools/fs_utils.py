@@ -5,12 +5,14 @@
 
 
 import base64
+import math
 import textwrap
 from datetime import datetime
 
 from aenum import IntFlag, Enum
 
 from core.test_run import TestRun
+from test_tools.dd import Dd
 from test_utils.size import Size, Unit
 
 
@@ -280,9 +282,17 @@ def parse_ls_output(ls_output, dir_path=''):
     return fs_items
 
 
-def create_test_file(target_file_path, file_content="Test content"):
+def create_random_test_file(target_file_path: str,
+                            file_size: Size = Size(1, Unit.MebiByte),
+                            random: bool = True):
     from test_utils.filesystem.file import File
+    bs = Size(512, Unit.KibiByte)
+    cnt = math.ceil(file_size.value / bs.value)
     file = File.create_file(target_file_path)
-    file.write(file_content)
+    dd = Dd().output(target_file_path) \
+             .input("/dev/urandom" if random else "/dev/zero") \
+             .block_size(bs) \
+             .count(cnt)
+    dd.run()
     file.refresh_item()
     return file
