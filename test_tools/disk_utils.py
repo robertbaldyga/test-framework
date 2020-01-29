@@ -309,3 +309,17 @@ def wipe_filesystem(device, force=True):
     TestRun.executor.run_expect_success(cmd)
     TestRun.LOGGER.info(
         f"Successfully wiped filesystem from device: {device.system_path}")
+
+
+def get_device_filesystem_type(device_system_path):
+    cmd = f'lsblk -l -o NAME,FSTYPE | grep "{device_system_path.replace("/dev/", "")} "'
+    stdout = TestRun.executor.run_expect_success(cmd).stdout
+    split_stdout = stdout.strip().split()
+    if len(split_stdout) <= 1:
+        return None
+    else:
+        try:
+            return Filesystem[split_stdout[1]]
+        except KeyError:
+            TestRun.LOGGER.warning(f"Unrecognized filesystem: {split_stdout[1]}")
+            return None
