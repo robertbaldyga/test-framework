@@ -5,12 +5,14 @@
 
 
 import base64
+import math
 import textwrap
 from datetime import datetime
 
 from aenum import IntFlag, Enum
 
 from core.test_run import TestRun
+from test_tools.dd import Dd
 from test_utils.size import Size, Unit
 
 
@@ -65,9 +67,9 @@ def copy(source: str,
          recursive: bool = False,
          dereference: bool = False):
     cmd = f"cp{' --force' if force else ''}" \
-        f"{' --recursive' if recursive else ''}" \
-        f"{' --dereference' if dereference else ''} " \
-        f"{source} {destination}"
+          f"{' --recursive' if recursive else ''}" \
+          f"{' --dereference' if dereference else ''} " \
+          f"{source} {destination}"
     return TestRun.executor.run_expect_success(cmd)
 
 
@@ -88,7 +90,7 @@ def remove(path, force: bool = False, recursive: bool = False, ignore_errors: bo
 def chmod(path, permissions: Permissions, users: PermissionsUsers,
           sign: PermissionSign = PermissionSign.set, recursive: bool = False):
     cmd = f"chmod{' --recursive' if recursive else ''} " \
-        f"{str(users)}{sign.value}{str(permissions)} {path}"
+          f"{str(users)}{sign.value}{str(permissions)} {path}"
     output = TestRun.executor.run(cmd)
     return output
 
@@ -197,7 +199,7 @@ def write_file(file, content, overwrite: bool = True, unix_line_end: bool = True
         overwrite = False
         encoded_content = base64.b64encode(s.encode("utf-8"))
         cmd = f"printf '{encoded_content.decode('utf-8')}' " \
-            f"| base64 --decode {redirection_char} {file}"
+              f"| base64 --decode {redirection_char} {file}"
         TestRun.executor.run_expect_success(cmd)
 
 
@@ -265,11 +267,11 @@ def parse_ls_output(ls_output, dir_path=''):
         else:
             fs_item = FsItem(full_path)
 
-        fs_item.permissions.user = Permissions['|'.join(list(permissions[:3].replace('-', '')))]\
+        fs_item.permissions.user = Permissions['|'.join(list(permissions[:3].replace('-', '')))] \
             if permissions[:3] != '---' else Permissions(0)
-        fs_item.permissions.group = Permissions['|'.join(list(permissions[3:6].replace('-', '')))]\
+        fs_item.permissions.group = Permissions['|'.join(list(permissions[3:6].replace('-', '')))] \
             if permissions[3:6] != '---' else Permissions(0)
-        fs_item.permissions.other = Permissions['|'.join(list(permissions[6:].replace('-', '')))]\
+        fs_item.permissions.other = Permissions['|'.join(list(permissions[6:].replace('-', '')))] \
             if permissions[6:] != '---' else Permissions(0)
 
         fs_item.owner = owner
@@ -280,9 +282,17 @@ def parse_ls_output(ls_output, dir_path=''):
     return fs_items
 
 
-def create_test_file(target_file_path, file_content="Test content"):
+def create_random_test_file(target_file_path: str,
+                            file_size: Size = Size(1, Unit.MebiByte),
+                            random: bool = True):
     from test_utils.filesystem.file import File
+    bs = Size(512, Unit.KibiByte)
+    cnt = math.ceil(file_size.value / bs.value)
     file = File.create_file(target_file_path)
-    file.write(file_content)
+    dd = Dd().output(target_file_path) \
+             .input("/dev/urandom" if random else "/dev/zero") \
+             .block_size(bs) \
+             .count(cnt)
+    dd.run()
     file.refresh_item()
     return file
