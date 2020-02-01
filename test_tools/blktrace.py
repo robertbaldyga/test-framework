@@ -47,6 +47,7 @@ class ActionKind(Enum):
     IoMerge = "M"
     PlugRequest = "P"
     IoHandled = "Q"
+    RequeueRequest = "R"
     SleepRequest = "S"
     TimeoutUnplug = "T"     # old version of TimerUnplug
     UnplugRequest = "U"
