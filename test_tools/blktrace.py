@@ -176,3 +176,23 @@ class Header:
         header.timestamp = int(timestamp_fields[0]) * math.pow(10, 9) + timestamp_nano
 
         return header
+
+    def __str__(self):
+        ret = []
+        if self.action:
+            ret.append(f"action: {self.action.name}")
+        if self.block_count:
+            ret.append(f"block_count: {self.block_count}")
+        if self.byte_count:
+            ret.append(f"byte_count: {self.byte_count}")
+        if self.command:
+            ret.append(f"command: {self.command}")
+        if self.error_value:
+            ret.append(f"error_value: {self.error_value}")
+        if self.rwbs:
+            ret.append(f"rwbs: {self.rwbs}")
+        if self.sector_number:
+            ret.append(f"sector_number: {self.sector_number}")
+        if self.timestamp:
+            ret.append(f"timestamp: {self.timestamp}")
+        return " ".join(ret)
