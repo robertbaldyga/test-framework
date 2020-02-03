@@ -98,7 +98,20 @@ class Size:
             raise ValueError("Subtracted value is too big. Result size cannot be negative.")
         return Size(self.get_value() - other.get_value())
 
+    @multimethod
     def __mul__(self, other: int):
+        return Size(math.ceil(self.get_value() * other))
+
+    @multimethod
+    def __rmul__(self, other: int):
+        return Size(math.ceil(self.get_value() * other))
+
+    @multimethod
+    def __mul__(self, other: float):
+        return Size(math.ceil(self.get_value() * other))
+
+    @multimethod
+    def __rmul__(self, other: float):
         return Size(math.ceil(self.get_value() * other))
 
     @multimethod
