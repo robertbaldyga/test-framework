@@ -48,9 +48,7 @@ def create_filesystem(device, filesystem: Filesystem, force=True, blocksize=None
     block_size_param = block_size_param if blocksize else ''
     cmd = f'mkfs.{filesystem.name} {force_param} {device.system_path} {block_size_param}'
     cmd = re.sub(' +', ' ', cmd)
-    output = TestRun.executor.run(cmd)
-    if output.exit_code != 0:
-        raise CmdException("Could not create filesystem.", output)
+    TestRun.executor.run_expect_success(cmd)
     TestRun.LOGGER.info(
         f"Successfully created filesystem on device: {device.system_path}")
 
@@ -59,16 +57,11 @@ def create_partition_table(device, partition_table_type: PartitionTable = Partit
     TestRun.LOGGER.info(
         f"Creating partition table ({partition_table_type.name}) for device: {device.system_path}")
     cmd = f'parted --script {device.system_path} mklabel {partition_table_type.name}'
-    output = TestRun.executor.run(cmd)
-    if output.exit_code == 0:
-        TestRun.LOGGER.info(
-            f"Successfully created {partition_table_type.name} "
-            f"partition table on device: {device.system_path}")
-        return True
-
-    TestRun.LOGGER.error(
-        f"Could not create partition table: {output.stderr}\n{output.stdout}")
-    return False
+    TestRun.executor.run_expect_success(cmd)
+    device.partition_table = partition_table_type
+    TestRun.LOGGER.info(
+        f"Successfully created {partition_table_type.name} "
+        f"partition table on device: {device.system_path}")
 
 
 def get_partition_path(parent_dev, number):
@@ -96,77 +89,67 @@ def create_partition(
     if part_type == PartitionType.logical:
         begin += Size(1, Unit.MebiByte if not aligned else device.block_size).get_value(unit)
 
-    end = f'{begin + part_size.get_value(unit)}{unit_to_string(unit)}' \
+    end = f'{begin + part_size.get_value(unit)}{unit.to_string()}' \
         if part_size != Size.zero() else '100%'
 
     cmd = f'parted --script {device.system_path} mkpart ' \
-          f'{part_type.name} {begin}{unit_to_string(unit)} {end}'
+          f'{part_type.name} {begin}{unit.to_string()} {end}'
     output = TestRun.executor.run(cmd)
 
-    if output.exit_code == 0:
-        TestRun.executor.run("udevadm settle")
-        if check_partition_after_create(
-                part_size,
-                part_number,
-                device.system_path,
-                part_type,
-                aligned):
-            TestRun.LOGGER.info(f"Successfully created partition on {device.system_path}")
-            return True
+    if output.exit_code != 0:
+        TestRun.executor.run_expect_success("partprobe")
 
-    output = TestRun.executor.run("partprobe")
-    if output.exit_code == 0:
-        TestRun.executor.run("udevadm settle")
-        if check_partition_after_create(
-                part_size,
-                part_number,
-                device.system_path,
-                part_type,
-                aligned):
-            TestRun.LOGGER.info(f"Successfully created partition on {device.system_path}")
-            return True
+    TestRun.executor.run_expect_success("udevadm settle")
+    if not check_partition_after_create(
+            part_size,
+            part_number,
+            device.system_path,
+            part_type,
+            aligned):
+        raise Exception("Could not create partition!")
 
-    raise Exception(f"Could not create partition: {output.stderr}\n{output.stdout}")
+    if part_type != PartitionType.extended:
+        from storage_devices.partition import Partition
+        new_part = Partition(device,
+                             part_type,
+                             part_number,
+                             begin,
+                             end if type(end) is Size else device.size)
+        dd = Dd().input("/dev/zero") \
+                 .output(new_part.system_path) \
+                 .count(1) \
+                 .block_size(Size(1, Unit.Blocks4096)) \
+                 .oflag("direct")
+        dd.run()
+        device.partitions.append(new_part)
+
+    TestRun.LOGGER.info(f"Successfully created {part_type.name} partition on {device.system_path}")
 
 
 def create_partitions(device, sizes: [], partition_table_type=PartitionTable.gpt):
-    from storage_devices.partition import Partition
-    if create_partition_table(device, partition_table_type):
-        device.partition_table = partition_table_type
-        partition_type = PartitionType.primary
+    create_partition_table(device, partition_table_type)
+    partition_type = PartitionType.primary
+    partition_number_offset = 0
 
-        partition_number_offset = 0
-        for s in sizes:
-            size = Size(
-                s.get_value(device.block_size) - device.block_size.value, device.block_size)
-            if partition_table_type == PartitionTable.msdos and \
-                    len(sizes) > 4 and len(device.partitions) == 3:
-                create_partition(device,
-                                 Size.zero(),
-                                 4,
-                                 PartitionType.extended,
-                                 Unit.MebiByte,
-                                 True)
-                partition_type = PartitionType.logical
-                partition_number_offset = 1
+    for s in sizes:
+        size = Size(
+            s.get_value(device.block_size) - device.block_size.value, device.block_size)
+        if partition_table_type == PartitionTable.msdos and \
+                len(sizes) > 4 and len(device.partitions) == 3:
+            create_partition(device,
+                             Size.zero(),
+                             4,
+                             PartitionType.extended)
+            partition_type = PartitionType.logical
+            partition_number_offset = 1
 
-            partition_number = len(device.partitions) + 1 + partition_number_offset
-            if create_partition(device,
-                                size,
-                                partition_number,
-                                partition_type,
-                                Unit.MebiByte,
-                                True):
-                new_part = Partition(device,
-                                     partition_type,
-                                     partition_number)
-                dd = Dd().input("/dev/zero") \
-                    .output(new_part.system_path) \
-                    .count(1) \
-                    .block_size(Size(1, Unit.Blocks4096)) \
-                    .oflag("direct")
-                dd.run()
-                device.partitions.append(new_part)
+        partition_number = len(device.partitions) + 1 + partition_number_offset
+        create_partition(device,
+                            size,
+                            partition_number,
+                            partition_type,
+                            Unit.MebiByte,
+                            True)
 
 
 def get_block_size(device):
@@ -179,13 +162,9 @@ def get_block_size(device):
 
 
 def get_size(device):
-    output = TestRun.executor.run(f"cat {get_sysfs_path(device)}/size")
-    if output.exit_code != 0:
-        TestRun.LOGGER.error(
-            f"Error while trying to get device {device} size.\n{output.stdout}\n{output.stderr}")
-    else:
-        blocks_count = int(output.stdout)
-        return blocks_count * int(get_block_size(device))
+    output = TestRun.executor.run_expect_success(f"cat {get_sysfs_path(device)}/size")
+    blocks_count = int(output.stdout)
+    return blocks_count * int(get_block_size(device))
 
 
 def get_sysfs_path(device):
@@ -198,14 +177,14 @@ def get_sysfs_path(device):
 def check_partition_after_create(size, part_number, parent_dev_path, part_type, aligned):
     partition_path = get_partition_path(parent_dev_path, part_number)
     cmd = f"find {partition_path} -type b"
-    output = TestRun.executor.run(cmd).stdout
+    output = TestRun.executor.run_expect_success(cmd).stdout
     if partition_path not in output:
         TestRun.LOGGER.info(
             "Partition created, but could not find it in system, trying 'hdparm -z'")
-        TestRun.executor.run(f"hdparm -z {parent_dev_path}")
-        output_after_hdparm = TestRun.executor.run(
-            f"parted --script {parent_dev_path} print")
-        TestRun.LOGGER.info(str(output_after_hdparm))
+        TestRun.executor.run_expect_success(f"hdparm -z {parent_dev_path}")
+        output_after_hdparm = TestRun.executor.run_expect_success(
+            f"parted --script {parent_dev_path} print").stdout
+        TestRun.LOGGER.info(output_after_hdparm)
 
     counter = 0
     while partition_path not in output and counter < 10:
