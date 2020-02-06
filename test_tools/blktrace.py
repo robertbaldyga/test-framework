@@ -64,6 +64,23 @@ class RwbsKind(IntFlag):
     S = 1 << 4  # Synchronous
     N = 1 << 5  # None of the above
 
+    def __str__(self):
+        ret = []
+        if self & RwbsKind.R:
+            ret.append("read")
+        if self & RwbsKind.W:
+            ret.append("write")
+        if self & RwbsKind.D:
+            ret.append("discard")
+        if self & RwbsKind.F:
+            ret.append("flush")
+        if self & RwbsKind.S:
+            ret.append("sync")
+        if self & RwbsKind.N:
+            ret.append("none")
+
+        return "|".join(ret)
+
 
 class BlkTrace:
     def __init__(self, device: Device, masks: BlkTraceMask = None):
