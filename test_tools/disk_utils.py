@@ -80,20 +80,21 @@ def create_partition(
     TestRun.LOGGER.info(
         f"Creating {part_type.name} partition on device: {device.system_path}")
 
-    begin = get_first_partition_offset(device, aligned).get_value(unit)
+    begin = get_first_partition_offset(device, aligned)
     for part in device.partitions:
-        begin += part.size.get_value(unit)
+        begin += part.size
         if part.type == PartitionType.logical:
-            begin += Size(1, Unit.MebiByte if not aligned else device.block_size).get_value(unit)
+            begin += Size(1, Unit.MebiByte if not aligned else device.block_size)
 
     if part_type == PartitionType.logical:
-        begin += Size(1, Unit.MebiByte if not aligned else device.block_size).get_value(unit)
+        begin += Size(1, Unit.MebiByte if not aligned else device.block_size)
 
-    end = f'{begin + part_size.get_value(unit)}{unit.to_string()}' \
-        if part_size != Size.zero() else '100%'
+    end = (begin + part_size) if part_size != Size.zero() else '100%'
 
     cmd = f'parted --script {device.system_path} mkpart ' \
-          f'{part_type.name} {begin}{unit.to_string()} {end}'
+          f'{part_type.name} ' \
+          f'{begin.get_value(unit)}{unit_to_string(unit)} ' \
+          f'{end.get_value(unit)}{unit_to_string(unit)}'
     output = TestRun.executor.run(cmd)
 
     if output.exit_code != 0:
@@ -145,11 +146,11 @@ def create_partitions(device, sizes: [], partition_table_type=PartitionTable.gpt
 
         partition_number = len(device.partitions) + 1 + partition_number_offset
         create_partition(device,
-                            size,
-                            partition_number,
-                            partition_type,
-                            Unit.MebiByte,
-                            True)
+                         size,
+                         partition_number,
+                         partition_type,
+                         Unit.MebiByte,
+                         True)
 
 
 def get_block_size(device):
