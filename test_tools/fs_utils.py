@@ -292,7 +292,8 @@ def create_random_test_file(target_file_path: str,
     dd = Dd().output(target_file_path) \
              .input("/dev/urandom" if random else "/dev/zero") \
              .block_size(bs) \
-             .count(cnt)
+             .count(cnt) \
+             .oflag("direct")
     dd.run()
     file.refresh_item()
     return file
