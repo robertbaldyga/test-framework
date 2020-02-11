@@ -6,6 +6,8 @@ import math
 
 from aenum import IntFlag, Enum
 
+from datetime import timedelta
+
 from core.test_run import TestRun
 from storage_devices.device import Device
 from test_utils.filesystem.directory import Directory
@@ -138,7 +140,9 @@ class BlkTrace:
                             "Be patient")
         command = (f'blkparse --input-dir={self.__outputDirectoryPath} --input={PREFIX} '
                    f'--format="{HEADER_FORMAT}"')
-        blkparse_output = TestRun.executor.run_expect_success(command)
+        blkparse_output = TestRun.executor.run_expect_success(
+            command, timeout=timedelta(minutes=60)
+        )
         parsed_headers = []
         for line in blkparse_output.stdout.splitlines():
             # At the end per-cpu summary is posted - there is no need for it now
