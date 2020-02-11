@@ -54,14 +54,14 @@ class BaseExecutor:
         time.sleep(3)
         self.run(f"kill -s SIGKILL {pid} &> /dev/null")
 
-    def run_expect_success(self, command):
+    def run_expect_success(self, command, timeout: timedelta = timedelta(minutes=30)):
         output = self.run(command)
         if output.exit_code != 0:
             raise CmdException(f"Exception occurred while trying to execute '{command}' command.",
                                output)
         return output
 
-    def run_expect_fail(self, command):
+    def run_expect_fail(self, command, timeout: timedelta = timedelta(minutes=30)):
         output = self.run(command)
         if output.exit_code == 0:
             raise CmdException(f"Command '{command}' executed properly but error was expected.",
