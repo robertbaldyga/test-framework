@@ -120,6 +120,9 @@ class FioParam(LinuxCommand):
         return self.set_flags('exitall_on_error') if value \
             else self.remove_flag('exitall_on_error')
 
+    def group_reporting(self, value: bool = True):
+        return self.set_flags('group_reporting') if value else self.remove_flag('group_reporting')
+
     def file_name(self, path):
         return self.set_param('filename', path)
 
@@ -258,7 +261,6 @@ class FioParam(LinuxCommand):
         return self.fio.global_cmd_parameters
 
     def run(self):
-        self.fio.base_cmd_parameters.set_flags("group_reporting")
         if "per_job_logs" in self.fio.global_cmd_parameters.command_param_dict:
             self.fio.global_cmd_parameters.set_param("per_job_logs", '0')
         fio_output = self.fio.run()
@@ -270,7 +272,6 @@ class FioParam(LinuxCommand):
         return self.get_results(output.stdout)
 
     def run_in_background(self):
-        self.fio.base_cmd_parameters.set_flags("group_reporting")
         if "per_job_logs" in self.fio.global_cmd_parameters.command_param_dict:
             self.fio.global_cmd_parameters.set_param("per_job_logs", '0')
         return self.fio.run_in_background()
