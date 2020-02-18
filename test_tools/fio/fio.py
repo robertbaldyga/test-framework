@@ -24,11 +24,15 @@ class Fio:
     def create_command(self):
         self.base_cmd_parameters = test_tools.fio.fio_param.FioParamCmd(self, self.executor)
         self.global_cmd_parameters = test_tools.fio.fio_param.FioParamConfig(self, self.executor)
+
         self.fio_file = f'fio_run_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%s")}'
         self.base_cmd_parameters\
             .set_param('eta', 'always')\
             .set_param('output-format', 'json')\
             .set_param('output', self.fio_file)
+
+        self.global_cmd_parameters.set_flags('group_reporting')
+
         return self.global_cmd_parameters
 
     def is_installed(self):
