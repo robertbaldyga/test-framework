@@ -52,6 +52,15 @@ class Unit(enum.Enum):
     Blocks512 = 512
     Blocks4096 = 4096
 
+    KiB = KibiByte
+    KB = KiloByte
+    MiB = MebiByte
+    MB = MegaByte
+    GiB = GibiByte
+    GB = GigaByte
+    TiB = TebiByte
+    TB = TeraByte
+
     def get_value(self):
         return self.value
 
