@@ -89,3 +89,12 @@ class FioResult:
 
     def write_completion_latency_average(self):
         return self.job.write.clat_ns.mean / 1000
+
+    @staticmethod
+    def result_list_to_dict(results):
+        result_dict = {}
+
+        for result in results:
+            result_dict[result.job.jobname] = result.job
+
+        return result_dict
