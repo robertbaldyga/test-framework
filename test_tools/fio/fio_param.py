@@ -242,6 +242,19 @@ class FioParam(LinuxCommand):
     def thread(self, value: bool = True):
         return self.set_flags('thread') if value else self.remove_param('thread')
 
+    def lat_percentiles(self, value: bool):
+        return self.set_param('lat_percentiles', int(value))
+
+    def slat_percentiles(self, value: bool):
+        return self.set_param('slat_percentiles', int(value))
+
+    def clat_percentiles(self, value: bool):
+        return self.set_param('clat_percentiles', int(value))
+
+    def percentile_list(self, value: []):
+        val = ':'.join(value) if len(value) > 0 else '100'
+        return self.set_param('percentile_list', val)
+
     def verification_with_pattern(self, pattern=None):
         if pattern is not None and pattern != '':
             self.verification_pattern = pattern
