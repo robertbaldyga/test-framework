@@ -31,6 +31,13 @@ class ErrorFilter(Enum):
     all = 5
 
 
+class FioOutput(Enum):
+    normal = 'normal'
+    terse = 'terse'
+    json = 'json'
+    jsonplus = 'json+'
+
+
 class IoEngine(Enum):
     # Basic read or write I/O. fseek is used to position the I/O location.
     sync = 0,
@@ -288,8 +295,8 @@ class FioParam(LinuxCommand):
             raise Exception(f"Exception occurred while trying to execute fio, exit_code:"
                             f"{fio_output.exit_code}.\n"
                             f"stdout: {fio_output.stdout}\nstderr: {fio_output.stderr}")
-        output = self.command_executor.run(f"cat {self.fio.fio_file}")
-        return self.get_results(output.stdout)
+        out = self.command_executor.run_expect_success(f"cat {self.fio.fio_file}").stdout
+        return self.get_results(out)
 
     def run_in_background(self):
         if "per_job_logs" in self.fio.global_cmd_parameters.command_param_dict:
