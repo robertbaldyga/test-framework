@@ -252,6 +252,9 @@ class FioParam(LinuxCommand):
     def verify(self, value: VerifyMethod):
         return self.set_param('verify', value.name)
 
+    def create_only(self, value: bool = False):
+        return self.set_param('create_only', int(value))
+
     def verify_pattern(self, pattern=None):
         return self.set_param('verify_pattern', pattern or self.get_verification_pattern())
 
