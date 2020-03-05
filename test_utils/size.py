@@ -65,6 +65,15 @@ class Unit(enum.Enum):
         return self.value
 
 
+class UnitPerSecond:
+    def __init__(self, unit):
+        self.value = unit.get_value()
+        self.name = unit.name + "/s"
+
+    def get_value(self):
+        return self.value
+
+
 class Size:
     def __init__(self, value: float, unit: Unit = Unit.Byte):
         if value < 0:
