@@ -38,7 +38,7 @@ class Kedr:
         # TODO consider using os_utils.download_file()
         kedr_archive = wget.download(KEDR_0_6_URL)
 
-        TestRun.executor.rsync(
+        TestRun.executor.rsync_to(
             f"\"{kedr_archive}\"",
             f"{TestRun.config['working_dir']}")
 

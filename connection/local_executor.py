@@ -23,8 +23,8 @@ class LocalExecutor(BaseExecutor):
                       completed_process.stderr,
                       completed_process.returncode)
 
-    def rsync(self, src, dst, delete=False, symlinks=False, exclude_list=[],
-              timeout: timedelta = timedelta(seconds=30)):
+    def _rsync(self, src, dst, delete=False, symlinks=False, exclude_list=[],
+               timeout: timedelta = timedelta(seconds=30), dut_to_controller=False):
         options = []
 
         if delete:

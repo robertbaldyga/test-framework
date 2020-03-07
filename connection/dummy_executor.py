@@ -10,5 +10,5 @@ class DummyExecutor(BaseExecutor):
     def _execute(self, command, timeout=None):
         print(command)
 
-    def rsync(self, src, dst, delete, symlinks, exclude_list, timeout):
+    def _rsync(self, src, dst, delete, symlinks, exclude_list, timeout, dut_to_controller):
         print(f'COPY FROM "{src}" TO "{dst}"')
