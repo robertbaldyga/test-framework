@@ -177,20 +177,19 @@ class Log(HtmlLogManager, metaclass=Singleton):
         from core.test_run import TestRun
         from connection.ssh_executor import SshExecutor
         from connection.local_executor import LocalExecutor
-        log_files = {"messages": "/var/log/messages",
+        from test_tools.fs_utils import check_if_file_exists
+        messages_log = "/var/log/messages"
+        if not check_if_file_exists(messages_log):
+            messages_log = "/var/log/syslog"
+        log_files = {"messages": messages_log,
                      "dmesg": "/home/user/dmesg",
                      "cas": "/var/log/opencas.log"}
         TestRun.executor.run(f"dmesg > {log_files['dmesg']}")
 
-        for key in log_files.keys():
+        for log_name, log_source_path in log_files.items():
             try:
-                log_destination_path = os.path.join(self.base_dir, "dut_info", f'{key}.log')
-                if type(TestRun.executor) is SshExecutor:
-                    sftp = TestRun.executor.ssh.open_sftp()
-                    sftp.get(log_files[key], log_destination_path)
-                    sftp.close()
-                elif type(TestRun.executor) is LocalExecutor:
-                    TestRun.executor.run(f"cp {log_files[key]} {log_destination_path}")
+                log_destination_path = os.path.join(self.base_dir, "dut_info", f'{log_name}.log')
+                TestRun.executor.rsync_from(log_source_path, log_destination_path)
             except Exception as e:
-                TestRun.LOGGER.warning(f"There was a problem during gathering {key} log.\n"
+                TestRun.LOGGER.warning(f"There was a problem during gathering {log_name} log.\n"
                                        f"{str(e)}")
