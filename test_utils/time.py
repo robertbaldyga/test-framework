@@ -8,4 +8,7 @@ from attotime import attotimedelta
 
 class Time(attotimedelta):
     def total_microseconds(self):
-        self.total_nanoseconds() / 1000
+        return self.total_nanoseconds() / 1_000
+
+    def total_milliseconds(self):
+        return self.total_nanoseconds() / 1_000_000
