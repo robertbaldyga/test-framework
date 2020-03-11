@@ -104,7 +104,7 @@ class FioResult:
         return Time(microseconds=self.job.write.runtime)
 
     def write_completion_latency_average(self):
-        return Time(microseconds=self.job.write.lat_ns.mean)
+        return Time(nanoseconds=self.job.write.lat_ns.mean)
 
     def write_completion_latency_min(self):
         return Time(nanoseconds=self.job.write.lat_ns.min)
@@ -120,6 +120,39 @@ class FioResult:
 
     def write_requests_number(self):
         return self.result.disk_util[0].write_ios
+
+    def trim_io(self):
+        return Size(self.job.trim.io_kbytes, Unit.KibiByte)
+
+    def trim_bandwidth(self):
+        return Size(self.job.trim.bw, UnitPerSecond(Unit.KibiByte))
+
+    def trim_bandwidth_average(self):
+        return Size(self.job.trim.bw_mean, UnitPerSecond(Unit.KibiByte))
+
+    def trim_bandwidth_deviation(self):
+        return Size(self.job.trim.bw_dev, UnitPerSecond(Unit.KibiByte))
+
+    def trim_iops(self):
+        return self.job.trim.iops
+
+    def trim_runtime(self):
+        return Time(microseconds=self.job.trim.runtime)
+
+    def trim_completion_latency_average(self):
+        return Time(nanoseconds=self.job.trim.lat_ns.mean)
+
+    def trim_completion_latency_min(self):
+        return Time(nanoseconds=self.job.trim.lat_ns.min)
+
+    def trim_completion_latency_max(self):
+        return Time(nanoseconds=self.job.trim.lat_ns.max)
+
+    def trim_completion_latency_average(self):
+        return Time(nanoseconds=self.job.trim.lat_ns.mean)
+
+    def trim_completion_latency_percentile(self):
+        return self.job.trim.lat_ns.percentile.__dict__
 
     @staticmethod
     def result_list_to_dict(results):
