@@ -51,8 +51,8 @@ class SshExecutor(BaseExecutor):
 
         return Output(stdout.read(), stderr.read(), stdout.channel.recv_exit_status())
 
-    def rsync(self, src, dst, delete=False, symlinks=False, exclude_list=[],
-              timeout: timedelta = timedelta(seconds=30)):
+    def _rsync(self, src, dst, delete=False, symlinks=False, exclude_list=[],
+               timeout: timedelta = timedelta(seconds=30), dut_to_controller=False):
         options = []
 
         if delete:
@@ -63,11 +63,13 @@ class SshExecutor(BaseExecutor):
         for exclude in exclude_list:
             options.append(f"--exclude {exclude}")
 
+        src_to_dst = f"{self.user}@{self.ip}:{src} {dst} " if dut_to_controller else\
+                     f"{src} {self.user}@{self.ip}:{dst} "
+
         completed_process = subprocess.run(
-            f'sshpass -p "{self.password}" '
-            f'rsync -r -e "ssh -p {self.port} -o UserKnownHostsFile=/dev/null '
-            f'-o StrictHostKeyChecking=no" '
-            f'{src} {self.user}@{self.ip}:{dst} {" ".join(options)}',
+            f'sshpass -p "{self.password}" rsync -r -e "ssh -p {self.port} '
+            f'-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" '
+            + src_to_dst + f'{" ".join(options)}',
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
