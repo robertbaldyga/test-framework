@@ -51,7 +51,7 @@ class SshExecutor(BaseExecutor):
 
         return Output(stdout.read(), stderr.read(), stdout.channel.recv_exit_status())
 
-    def _rsync(self, src, dst, delete=False, symlinks=False, exclude_list=[],
+    def _rsync(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
                timeout: timedelta = timedelta(seconds=30), dut_to_controller=False):
         options = []
 
@@ -59,6 +59,8 @@ class SshExecutor(BaseExecutor):
             options.append("--delete")
         if symlinks:
             options.append("--links")
+        if checksum:
+            options.append("--checksum")
 
         for exclude in exclude_list:
             options.append(f"--exclude {exclude}")
