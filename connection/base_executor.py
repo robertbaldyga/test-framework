@@ -15,7 +15,8 @@ class BaseExecutor:
     def _execute(self, command, timeout):
         raise NotImplementedError()
 
-    def _rsync(self, src, dst, delete, symlinks, checksum, exclude_list, timeout, dut_to_controller):
+    def _rsync(self, src, dst, delete, symlinks, checksum, exclude_list, timeout,
+               dut_to_controller):
         raise NotImplementedError()
 
     def rsync_to(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
