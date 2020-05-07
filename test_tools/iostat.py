@@ -45,13 +45,6 @@ class IOstat:
     def get_iostat(device: Device):
         """Returns object of IOstat class containing basic statistics displayed
            in kibibytes/kibibytes per second."""
-        lines = TestRun.executor.run(
-            f"iostat -dk {device.system_path} "
-            f"| grep {device.system_path.strip('/dev/')}").stdout.splitlines()
-        iostat_list = []
-        for line in lines:
-            args = line.split()
-            if args[0] == device.system_path.strip('/dev/'):
-                iostat_list = args[1:]
-        stats = IOstat(iostat_list)
-        return stats
+        device_path = device.system_path
+        output = TestRun.executor.run(f"iostat -dk {device_path} | grep -A 1 Device | tail -n 1")
+        return IOstat(output)

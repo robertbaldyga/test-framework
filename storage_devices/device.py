@@ -12,7 +12,7 @@ from test_utils.size import Size, Unit
 
 class Device:
     def __init__(self, path):
-        self.size = Size(disk_utils.get_size(path.replace('/dev/', '')), Unit.Byte)
+        self.size = Size(disk_utils.get_size(path), Unit.Byte)
         self.system_path = path
         self.filesystem = get_device_filesystem_type(path)
         self.mount_point = None
@@ -57,7 +57,7 @@ class Device:
         return fs_utils.parse_ls_output(output, self.system_path)
 
     def get_io_stats(self):
-        return IoStats.get_io_stats(self.system_path.replace('/dev/', ''))
+        return IoStats.get_io_stats(self.system_path)
 
     def __str__(self):
         return f'system path: {self.system_path}, filesystem: {self.filesystem}, ' \

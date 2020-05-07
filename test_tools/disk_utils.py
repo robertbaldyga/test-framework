@@ -73,8 +73,11 @@ def create_partition_table(device, partition_table_type: PartitionTable = Partit
 
 def get_partition_path(parent_dev, number):
     # TODO: change this to be less specific hw dependent
-    id_separator = 'p' if parent_dev[-1].isdigit() else ''
-    return f'{parent_dev}{id_separator}{number}'
+    if parent_dev.startswith("/dev/disk/by-id/"):
+        return f'{parent_dev}-part{number}'
+    if parent_dev[-1].isdigit():
+        return f'{parent_dev}p{number}'
+    return f'{parent_dev}{number}'
 
 
 def create_partition(
@@ -188,18 +191,20 @@ def get_size(device):
         return blocks_count * int(get_block_size(device))
 
 
+def get_major_minor(device):
+    output = TestRun.executor.run(f"ls -l $(realpath {device}) | cut -d ' ' -f 5-6")
+    return map(int, output.stdout.split(","))
+
 def get_sysfs_path(device):
-    sysfs_path = f"/sys/class/block/{device}"
-    if TestRun.executor.run(f"test -d {sysfs_path}").exit_code != 0:
-        sysfs_path = f"/sys/block/{device}"
-    return sysfs_path
+    major, minor = get_major_minor(device)
+    return f"/sys/dev/block/{major}:{minor}/"
 
 
 def check_partition_after_create(size, part_number, parent_dev_path, part_type, aligned):
     partition_path = get_partition_path(parent_dev_path, part_number)
-    cmd = f"find {partition_path} -type b"
-    output = TestRun.executor.run(cmd).stdout
-    if partition_path not in output:
+    cmd = f"find $(realpath {partition_path}) -type b"
+    output = TestRun.executor.run(cmd)
+    if not output.exit_code != 0:
         TestRun.LOGGER.info(
             "Partition created, but could not find it in system, trying 'hdparm -z'")
         TestRun.executor.run(f"hdparm -z {parent_dev_path}")
@@ -208,13 +213,10 @@ def check_partition_after_create(size, part_number, parent_dev_path, part_type, 
         TestRun.LOGGER.info(str(output_after_hdparm))
 
     counter = 0
-    while partition_path not in output and counter < 10:
+    while output.exit_code != 0 and counter < 10:
         time.sleep(2)
-        output = TestRun.executor.run(cmd).stdout
+        output = TestRun.executor.run(cmd)
         counter += 1
-
-    if len(output.split('\n')) > 1 or partition_path not in output:
-        return False
 
     if aligned and part_type != PartitionType.extended \
             and size.get_value(Unit.Byte) % Unit.Blocks4096.value != 0:
@@ -222,11 +224,11 @@ def check_partition_after_create(size, part_number, parent_dev_path, part_type, 
             f"Partition {partition_path} is not 4k aligned: {size.get_value(Unit.KibiByte)}KiB")
 
     if part_type == PartitionType.extended or \
-            get_size(partition_path.replace('/dev/', '')) == size.get_value(Unit.Byte):
+            get_size(partition_path) == size.get_value(Unit.Byte):
         return True
 
     TestRun.LOGGER.warning(
-        f"Partition size {get_size(partition_path.replace('/dev/', ''))} does not match expected "
+        f"Partition size {get_size(partition_path)} does not match expected "
         f"{size.get_value(Unit.Byte)} size.")
     return True
 
@@ -312,7 +314,8 @@ def wipe_filesystem(device, force=True):
 
 
 def get_device_filesystem_type(device_system_path):
-    cmd = f'lsblk -l -o NAME,FSTYPE | grep "{device_system_path.replace("/dev/", "")} "'
+    major, minor = get_major_minor(device_system_path)
+    cmd = f'lsblk -l -o MAJ:MIN,FSTYPE | grep "{major}:{minor} "'
     stdout = TestRun.executor.run_expect_success(cmd).stdout
     split_stdout = stdout.strip().split()
     if len(split_stdout) <= 1:

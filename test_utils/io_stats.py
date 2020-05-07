@@ -6,6 +6,7 @@ import re
 
 from core.test_run import TestRun
 from test_utils.output import CmdException
+from test_tools import disk_utils
 
 SYSFS_LINE_FORMAT = r"^(\d+\s+){10,}\d+$"
 PROCFS_LINE_FORMAT = r"^\d+\s+\d+\s+\w+\s+" + SYSFS_LINE_FORMAT[1:]
@@ -104,9 +105,10 @@ class IoStats:
         return stats
 
     @staticmethod
-    def get_io_stats(device_id):
+    def get_io_stats(device_path):
+        major, minor = disk_utils.get_major_minor(device_path)
         stats_output = TestRun.executor.run_expect_success(
-            f"cat /proc/diskstats | grep '{device_id} '")
+            f"cat /proc/diskstats | grep '^\\s*{major}\\s*{minor}'")
         if not stats_output.stdout.strip():
             raise CmdException("Failed to get statistics for device " + device_id, stats_output)
         return IoStats.parse(stats_line=stats_output.stdout.splitlines()[0])

@@ -36,23 +36,23 @@ def get_block_devices_list(block_devices):
     devices = TestRun.executor.run_expect_success("ls /sys/block -1").stdout.splitlines()
     os_disks = get_system_disks()
 
-    for dev in devices:
-        if ('sd' in dev or 'nvme' in dev) and dev not in os_disks:
-            block_devices.append(dev)
+    for device_path in devices:
+        if ('sd' in device_path or 'nvme' in device_path) and device_path not in os_disks:
+            block_devices.append(device_path)
 
 
 def discover_hdd_devices(block_devices, devices_res):
-    for dev in block_devices:
-        block_size = disk_utils.get_block_size(dev)
+    for device_path in block_devices:
+        block_size = disk_utils.get_block_size(device_path)
         if int(block_size) == 4096:
             disk_type = 'hdd4k'
         else:
             disk_type = 'hdd'
         devices_res.append({
             "type": disk_type,
-            "path": f"/dev/{dev}",
+            "path": device_path,
             "serial": TestRun.executor.run_expect_success(
-                f"sg_inq /dev/{dev} | grep 'Unit serial number'").stdout.split(': ')[1].strip(),
+                f"sg_inq {device_path} | grep 'Unit serial number'").stdout.split(': ')[1].strip(),
             "blocksize": block_size,
             "size": disk_utils.get_size(dev)})
     block_devices.clear()
@@ -65,16 +65,13 @@ def discover_ssd_devices(block_devices, devices_res):
     for i in range(0, ssd_count):
         device_path = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep DevicePath").stdout.split()[2]
-        dev = device_path.replace('/dev/', '')
         serial_number = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep SerialNumber").stdout.split()[2].strip()
         if 'nvme' not in device_path:
             disk_type = 'sata'
-            dev = find_sata_ssd_device_path(serial_number, block_devices)
-            if dev is None:
+            device_path = find_sata_ssd_device_path(serial_number, block_devices)
+            if device_path is None:
                 continue
-            if "sg" in device_path:
-                device_path = f"/dev/{dev}"
         elif TestRun.executor.run(
                 f"isdct show -intelssd {i} | grep Optane").exit_code == 0:
             disk_type = 'optane'
@@ -85,9 +82,9 @@ def discover_ssd_devices(block_devices, devices_res):
             "type": disk_type,
             "path": device_path,
             "serial": serial_number,
-            "blocksize": disk_utils.get_block_size(dev),
-            "size": disk_utils.get_size(dev)})
-        block_devices.remove(dev)
+            "blocksize": disk_utils.get_block_size(device_path),
+            "size": disk_utils.get_size(device_path)})
+        block_devices.remove(device_path)
 
 
 def get_disk_serial_number(dev_path):
@@ -111,22 +108,22 @@ def get_all_serial_numbers():
     block_devices = []
     serial_numbers = {}
     get_block_devices_list(block_devices)
-    for dev in block_devices:
-        serial = get_disk_serial_number(dev)
+    for device_path in block_devices:
+        serial = get_disk_serial_number(device_path)
         if serial:
-            serial_numbers[serial] = dev
+            serial_numbers[serial] = device_path
         else:
-            TestRun.LOGGER.warning(f"Device {dev} does not have a serial number.")
-            serial_numbers[dev] = dev
+            TestRun.LOGGER.warning(f"Device {device_path} does not have a serial number.")
+            serial_numbers[device_path] = device_path
     return serial_numbers
 
 
 def find_sata_ssd_device_path(serial_number, block_devices):
-    for dev in block_devices:
+    for device_path in block_devices:
         dev_serial = TestRun.executor.run_expect_success(
-            f"sg_inq /dev/{dev} | grep 'Unit serial number'").stdout.split(': ')[1].strip()
+            f"sg_inq {device_path} | grep 'Unit serial number'").stdout.split(': ')[1].strip()
         if dev_serial == serial_number:
-            return dev
+            return device_path
     return None
 
 
