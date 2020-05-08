@@ -26,7 +26,11 @@ class SshExecutor(BaseExecutor):
     def __del__(self):
         self.ssh.close()
 
-    def connect(self, user, passwd, port, timeout: timedelta = timedelta(seconds=30)):
+    def connect(self, user=None, passwd=None, port=None,
+                timeout: timedelta = timedelta(seconds=30)):
+        user = user or self.user
+        passwd = passwd or self.password
+        port = port or self.port
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             self.ssh.connect(self.ip, username=user, password=passwd,
@@ -100,7 +104,7 @@ class SshExecutor(BaseExecutor):
         with TestRun.group("Waiting for DUT ssh connection"):
             while start_time + timeout > datetime.now():
                 try:
-                    self.connect(user=self.user, passwd=self.password, port=self.port)
+                    self.connect()
                     return
                 except Exception:
                     continue
