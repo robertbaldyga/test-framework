@@ -61,10 +61,15 @@ class PluginManager:
                 continue
 
     def __import_plugin(self, name):
+        provided_by = self.plugins_config.get(name, {}).get("provided_by")
+        if provided_by:
+            return importlib.import_module(provided_by)
+
         try:
             return importlib.import_module(f"internal_plugins.{name}")
         except ModuleNotFoundError:
             pass
+
         return importlib.import_module(f"external_plugins.{name}")
 
     def hook_pre_setup(self):
