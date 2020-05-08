@@ -5,7 +5,7 @@
 
 
 class ExamplePlugin:
-    def __init__(self, params):
+    def __init__(self, params, config):
         self.params = params
         print(f"Example plugin initialized with params {self.params}")
 

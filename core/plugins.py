@@ -15,6 +15,8 @@ class PluginManager:
             sys.path.append(config['plugins_dir'])
         self.plugins = {}
 
+        self.plugins_config = config.get('plugins', {})
+
         self.req_plugins = config.get('req_plugins', {})
         self.opt_plugins = config.get('opt_plugins', {})
 
@@ -41,13 +43,17 @@ class PluginManager:
 
         for name, mod in req_plugin_mod.items():
             try:
-                self.plugins[name] = mod.plugin_class(self.req_plugins[name])
+                self.plugins[name] = mod.plugin_class(
+                    self.req_plugins[name],
+                    self.plugins_config.get(name, {}).get("config", {}))
             except Exception:
                 pytest.skip(f"Unable to initialize plugin '{name}'")
 
         for name, mod in opt_plugin_mod.items():
             try:
-                self.plugins[name] = mod.plugin_class(self.opt_plugins[name])
+                self.plugins[name] = mod.plugin_class(
+                    self.opt_plugins[name],
+                    self.plugins_config.get(name, {}).get("config", {}))
             except Exception as e:
                 TestRun.LOGGER.debug(
                     f"Failed to initialize '{name}' - optional plugin. " f"Reason: {e}"
