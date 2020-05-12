@@ -144,6 +144,17 @@ class Size:
             raise ValueError("Divisor must not be equal to 0.")
         return Size(math.ceil(self.get_value() / other))
 
+    def set_unit(self, new_unit: Unit):
+        new_size = Size(self.get_value(target_unit=new_unit), unit=new_unit)
+
+        if new_size != self:
+            raise ValueError(f"{new_unit} is not precise enough for {self}")
+
+        self.value = new_size.value
+        self.unit = new_size.unit
+
+        return self
+
     def get_value(self, target_unit: Unit = Unit.Byte):
         return self.value / target_unit.value
 
