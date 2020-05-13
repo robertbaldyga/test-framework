@@ -66,7 +66,8 @@ class ReadWrite(Enum):
     readwrite = 4,
     write = 5,
     trim = 6,
-    randtrim = 7
+    randtrim = 7,
+    trimwrite = 8
 
 
 class VerifyMethod(Enum):
