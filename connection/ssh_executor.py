@@ -8,6 +8,7 @@ import subprocess
 from datetime import timedelta, datetime
 
 import paramiko
+from paramiko.ssh_exception import NoValidConnectionsError
 
 from connection.base_executor import BaseExecutor
 from core.test_run import TestRun
@@ -114,8 +115,9 @@ class SshExecutor(BaseExecutor):
         with TestRun.group("Waiting for DUT ssh connection loss"):
             end_time = datetime.now() + timeout
             while end_time > datetime.now():
+                self.disconnect()
                 try:
-                    self.ssh.exec_command(":", timeout=30)
-                except (paramiko.SSHException, ConnectionResetError):
+                    self.connect(timeout=timedelta(seconds=5))
+                except (ConnectionResetError, NoValidConnectionsError):
                     return
             raise ConnectionError("Timeout occurred before ssh connection loss")
