@@ -6,6 +6,7 @@
 import pytest
 import sys
 import importlib
+from core.test_run import TestRun
 
 
 class PluginManager:
@@ -32,7 +33,10 @@ class PluginManager:
         for name in self.opt_plugins:
             try:
                 opt_plugin_mod[name] = self.__import_plugin(name)
-            except ModuleNotFoundError:
+            except ModuleNotFoundError as e:
+                TestRun.LOGGER.debug(
+                    f"Failed to import '{name}' - optional plugin. " f"Reason: {e}"
+                )
                 continue
 
         for name, mod in req_plugin_mod.items():
@@ -44,7 +48,10 @@ class PluginManager:
         for name, mod in opt_plugin_mod.items():
             try:
                 self.plugins[name] = mod.plugin_class(self.opt_plugins[name])
-            except Exception:
+            except Exception as e:
+                TestRun.LOGGER.debug(
+                    f"Failed to initialize '{name}' - optional plugin. " f"Reason: {e}"
+                )
                 continue
 
     def __import_plugin(self, name):
