@@ -5,12 +5,15 @@
 
 import time
 from datetime import timedelta, datetime
+import os
 
 from aenum import IntFlag, Enum
 from packaging import version
 
+from storage_devices.device import Device
 from core.test_run import TestRun
 from test_tools.fs_utils import check_if_directory_exists
+from test_tools.disk_utils import get_sysfs_path
 from test_utils.filesystem.file import File
 
 DEBUGFS_MOUNT_POINT = "/sys/kernel/debug"
@@ -133,3 +136,22 @@ def wait(predicate, timeout: timedelta, interval: timedelta = None):
 
 def sync():
     TestRun.executor.run_expect_success("sync")
+
+
+def set_wbt_lat(device: Device, value: int):
+    if value < 0:
+        raise ValueError("Write back latency can't be negative number")
+
+    wbt_lat_config_path = os.path.join(
+        get_sysfs_path(device.system_path.strip("/dev/")), "queue/wbt_lat_usec"
+    )
+
+    return TestRun.executor.run_expect_success(f"echo {value} > {wbt_lat_config_path}")
+
+
+def get_wbt_lat(device: Device):
+    wbt_lat_config_path = os.path.join(
+        get_sysfs_path(device.system_path.strip("/dev/")), "queue/wbt_lat_usec"
+    )
+
+    return int(TestRun.executor.run_expect_success(f"cat {wbt_lat_config_path}").stdout)
