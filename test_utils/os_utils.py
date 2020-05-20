@@ -138,6 +138,10 @@ def sync():
     TestRun.executor.run_expect_success("sync")
 
 
+def get_dut_cpu_number():
+    return int(TestRun.executor.run_expect_success("nproc").stdout)
+
+
 def set_wbt_lat(device: Device, value: int):
     if value < 0:
         raise ValueError("Write back latency can't be negative number")
