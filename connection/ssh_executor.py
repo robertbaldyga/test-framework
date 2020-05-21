@@ -118,6 +118,6 @@ class SshExecutor(BaseExecutor):
                 self.disconnect()
                 try:
                     self.connect(timeout=timedelta(seconds=5))
-                except (ConnectionResetError, NoValidConnectionsError):
+                except Exception:
                     return
             raise ConnectionError("Timeout occurred before ssh connection loss")
