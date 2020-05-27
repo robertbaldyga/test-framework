@@ -262,8 +262,7 @@ def parse_ls_output(ls_output, dir_path=''):
         elif file_type == 'd':
             fs_item = Directory(full_path)
         elif file_type == 'l':
-            target_path = TestRun.executor.run(f"readlink -f {full_path}").stdout
-            fs_item = Symlink(full_path, target_path)
+            fs_item = Symlink(full_path)
         else:
             fs_item = FsItem(full_path)
 
