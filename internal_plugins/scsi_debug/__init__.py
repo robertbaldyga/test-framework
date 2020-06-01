@@ -11,7 +11,7 @@ from test_utils.output import CmdException
 
 
 class ScsiDebug:
-    def __init__(self, params):
+    def __init__(self, params, config):
         self.params = params
         self.module_name = "scsi_debug"
 
