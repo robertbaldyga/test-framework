@@ -9,7 +9,9 @@ from test_utils.size import Size, Unit, UnitPerSecond
 from test_utils.time import Time
 
 
-class IOstat:
+class IOstatExtended:
+    iostat_option = "x"
+
     def __init__(self, device_name: str, raw_stats: list = None):
         metrics_number = 13
         if raw_stats is None:
@@ -84,39 +86,106 @@ class IOstat:
             and self.utilization == other.utilization
         )
 
-    @staticmethod
+    @classmethod
     def get_iostat_list(
-        devices_list: [Device], since_boot: bool = True, interval: int = 1
+            cls,
+            devices_list: [Device],
+            since_boot: bool = True,
+            interval: int = 1,
     ):
         """
             Returns list of IOstat objects containing extended statistics displayed
             in kibibytes/kibibytes per second.
         """
-        if interval < 1:
-            raise ValueError("iostat interval must be positive!")
+        return _get_iostat_list(cls, devices_list, since_boot, interval)
 
-        iostat_cmd = "iostat -xk "
-        if not since_boot:
-            iostat_cmd += f"-y {interval} 1 "
 
-        iostat_cmd += " ".join(
-            [name.system_path.strip("/dev/") for name in devices_list]
+class IOstatBasic:
+    iostat_option = "d"
+
+    def __init__(self, device_name: str, raw_stats: list = None):
+        metrics_number = 5
+        if raw_stats is None:
+            raw_stats = [0] * metrics_number
+        if len(raw_stats) < metrics_number:
+            raw_stats.extend([0] * metrics_number)
+
+        self.device_name = device_name
+        # tps
+        self.transfers_per_second = float(raw_stats[0])
+        # kB_read/s
+        self.reads_per_second = Size(float(raw_stats[1]), UnitPerSecond(Unit.KiloByte))
+        # kB_wrtn/s
+        self.writes_per_second = Size(float(raw_stats[2]), UnitPerSecond(Unit.KiloByte))
+        # kB_read
+        self.total_reads = Size(float(raw_stats[3]), Unit.KibiByte)
+        # kB_wrtn
+        self.total_writes = Size(float(raw_stats[4]), Unit.KibiByte)
+
+    def __str__(self):
+        return (
+            f"\n=========={self.device_name} IO stats: ==========\n"
+            f"Transfers per second: {self.transfers_per_second}\n"
+            f"Kilobytes read per second: {self.reads_per_second}\n"
+            f"Kilobytes written per second: {self.writes_per_second}\n"
+            f"Kilobytes read: {self.total_reads}\n"
+            f"Kilobytes written: {self.total_writes}\n"
+            f"=================================================\n"
         )
-        grep_pattern = "\\|".join(
-            [name.system_path.strip("/dev/") for name in devices_list]
-        )
 
-        lines = TestRun.executor.run(
-            f"{iostat_cmd} " f'| grep "{grep_pattern}"'
-        ).stdout.splitlines()
+    def __repr__(self):
+        return str(self)
 
-        ret = []
-        raw_stats = []
-        for line in lines:
-            args = line.split()
+    def __eq__(self, other):
+        if not isinstance(other, IOstatBasic):
+            return False
+        return vars(self) == vars(other)
 
-            dev_name = args[0]
-            raw_stats = args[1:]
-            ret += [IOstat(raw_stats=raw_stats, device_name=dev_name)]
+    @classmethod
+    def get_iostat_list(
+            cls,
+            devices_list: [Device],
+            since_boot: bool = True,
+            interval: int = 1,
+    ):
+        """
+            Returns list of IOstat objects containing basic statistics displayed
+            in kibibytes/kibibytes per second.
+        """
+        return _get_iostat_list(cls, devices_list, since_boot, interval)
 
-        return ret
+
+def _get_iostat_list(
+        class_type: type,
+        devices_list: [Device],
+        since_boot: bool,
+        interval: int,
+):
+    if interval < 1:
+        raise ValueError("iostat interval must be positive!")
+
+    iostat_cmd = f"iostat -k -{class_type.iostat_option} "
+
+    if not since_boot:
+        iostat_cmd += f"-y {interval} 1 "
+
+    iostat_cmd += " ".join(
+        [name.system_path.strip("/dev/") for name in devices_list]
+    )
+    grep_pattern = "\\|".join(
+        [name.system_path.strip("/dev/") for name in devices_list]
+    )
+
+    lines = TestRun.executor.run(
+        f"{iostat_cmd} " f'| grep "{grep_pattern}"'
+    ).stdout.splitlines()
+
+    ret = []
+    for line in lines:
+        args = line.split()
+
+        dev_name = args[0]
+        raw_stats = args[1:]
+        ret += [class_type(device_name=dev_name, raw_stats=raw_stats)]
+
+    return ret
