@@ -105,6 +105,16 @@ def reload_kernel_module(module_name, module_args: {str, str}=None):
     load_kernel_module(module_name, module_args)
 
 
+def get_module_path(module_name):
+    cmd = f"modinfo {module_name}"
+
+    # module path is in second column of first line of `modinfo` output
+    module_info = TestRun.executor.run_expect_success(cmd).stdout
+    module_path = module_info.splitlines()[0].split()[1]
+
+    return module_path
+
+
 def kill_all_io():
     # TERM signal should be used in preference to the KILL signal, since a
     # process may install a handler for the TERM signal in order to perform
