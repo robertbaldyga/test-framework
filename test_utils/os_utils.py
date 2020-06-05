@@ -115,6 +115,14 @@ def get_module_path(module_name):
     return module_path
 
 
+def get_executable_path(exec_name):
+    cmd = f"which {exec_name}"
+
+    path = TestRun.executor.run_expect_success(cmd).stdout
+
+    return path
+
+
 def kill_all_io():
     # TERM signal should be used in preference to the KILL signal, since a
     # process may install a handler for the TERM signal in order to perform
