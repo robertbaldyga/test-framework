@@ -123,6 +123,16 @@ def get_executable_path(exec_name):
     return path
 
 
+def get_udev_service_path(unit_name):
+    cmd = f"systemctl cat {unit_name}"
+
+    # path is in second column of first line of output
+    info = TestRun.executor.run_expect_success(cmd).stdout
+    path = info.splitlines()[0].split()[1]
+
+    return path
+
+
 def kill_all_io():
     # TERM signal should be used in preference to the KILL signal, since a
     # process may install a handler for the TERM signal in order to perform
