@@ -303,6 +303,11 @@ class FioParam(LinuxCommand):
         self.fio.jobs.append(new_job)
         return new_job
 
+    def clear_jobs(self):
+        self.fio.jobs = []
+
+        return self
+
     def edit_global(self):
         return self.fio.global_cmd_parameters
 
