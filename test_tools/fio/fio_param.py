@@ -117,7 +117,7 @@ class FioParam(LinuxCommand):
         return self.set_param('continue_on_error', value.name)
 
     def cpus_allowed(self, value):
-        return self.set_param('cpus_allowed', value)
+        return self.set_param('cpus_allowed', ",".join(value))
 
     def cpus_allowed_policy(self, value: CpusAllowedPolicy):
         return self.set_param('cpus_allowed_policy', value.name)
