@@ -170,6 +170,24 @@ def get_dut_cpu_number():
     return int(TestRun.executor.run_expect_success("nproc").stdout)
 
 
+def get_dut_cpu_physical_cores():
+    """ Get list of CPU numbers that don't share physical cores """
+    output = TestRun.executor.run_expect_success("lscpu --all --parse").stdout
+
+    core_list = []
+    visited_phys_cores = []
+    for line in output.split("\n"):
+        if "#" in line:
+            continue
+
+        cpu_no, phys_core_no = line.split(",")[:2]
+        if phys_core_no not in visited_phys_cores:
+            core_list.append(cpu_no)
+            visited_phys_cores.append(phys_core_no)
+
+    return core_list
+
+
 def set_wbt_lat(device: Device, value: int):
     if value < 0:
         raise ValueError("Write back latency can't be negative number")
