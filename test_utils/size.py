@@ -16,7 +16,7 @@ def parse_unit(str_unit: str):
 
     if str_unit == "KiB":
         return Unit.KibiByte
-    elif str_unit == "4KiB Blocks":
+    elif str_unit in ["4KiB blocks", "4KiB Blocks"]:
         return Unit.Blocks4096
     elif str_unit == "MiB":
         return Unit.MebiByte
