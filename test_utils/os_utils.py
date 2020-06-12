@@ -105,6 +105,34 @@ def reload_kernel_module(module_name, module_args: {str, str}=None):
     load_kernel_module(module_name, module_args)
 
 
+def get_module_path(module_name):
+    cmd = f"modinfo {module_name}"
+
+    # module path is in second column of first line of `modinfo` output
+    module_info = TestRun.executor.run_expect_success(cmd).stdout
+    module_path = module_info.splitlines()[0].split()[1]
+
+    return module_path
+
+
+def get_executable_path(exec_name):
+    cmd = f"which {exec_name}"
+
+    path = TestRun.executor.run_expect_success(cmd).stdout
+
+    return path
+
+
+def get_udev_service_path(unit_name):
+    cmd = f"systemctl cat {unit_name}"
+
+    # path is in second column of first line of output
+    info = TestRun.executor.run_expect_success(cmd).stdout
+    path = info.splitlines()[0].split()[1]
+
+    return path
+
+
 def kill_all_io():
     # TERM signal should be used in preference to the KILL signal, since a
     # process may install a handler for the TERM signal in order to perform
