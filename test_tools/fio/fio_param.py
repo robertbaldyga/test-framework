@@ -117,7 +117,7 @@ class FioParam(LinuxCommand):
         return self.set_param('continue_on_error', value.name)
 
     def cpus_allowed(self, value):
-        return self.set_param('cpus_allowed', value)
+        return self.set_param('cpus_allowed', ",".join(value))
 
     def cpus_allowed_policy(self, value: CpusAllowedPolicy):
         return self.set_param('cpus_allowed_policy', value.name)
@@ -302,6 +302,11 @@ class FioParam(LinuxCommand):
         new_job = FioParamConfig(self.fio, self.command_executor, f'[{job_name}]')
         self.fio.jobs.append(new_job)
         return new_job
+
+    def clear_jobs(self):
+        self.fio.jobs = []
+
+        return self
 
     def edit_global(self):
         return self.fio.global_cmd_parameters
