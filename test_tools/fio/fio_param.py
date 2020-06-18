@@ -196,6 +196,9 @@ class FioParam(LinuxCommand):
     def nr_files(self, value: int):
         return self.set_param('nrfiles', value)
 
+    def num_ios(self, value: int):
+        return self.set_param('number_ios', value)
+
     def num_jobs(self, value: int):
         return self.set_param('numjobs', value)
 
