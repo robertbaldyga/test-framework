@@ -51,6 +51,9 @@ class Device:
         items = self.get_all_device_links(directory)
         return next(i for i in items if i.full_path.startswith(directory))
 
+    def get_device_id(self):
+        return self.system_path.split('/')[-1]
+
     def get_all_device_links(self, directory: str):
         from test_tools import fs_utils
         output = fs_utils.ls(f"$(find -L {directory} -samefile {self.system_path})")
