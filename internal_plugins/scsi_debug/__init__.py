@@ -19,6 +19,15 @@ class ScsiDebug:
         pass
 
     def post_setup(self):
+        self.reload()
+
+    def teardown(self):
+        unload_output = os_utils.unload_kernel_module(self.module_name)
+        if unload_output.exit_code != 0 \
+                and "is not currently loaded" not in unload_output.stderr:
+            TestRun.LOGGER.info(f"Failed to unload {self.module_name} module\n{unload_output}")
+
+    def reload(self):
         self.teardown()
         sleep(1)
         load_output = os_utils.load_kernel_module(self.module_name, self.params)
@@ -27,12 +36,6 @@ class ScsiDebug:
         TestRun.LOGGER.info(f"{self.module_name} loaded successfully.")
         sleep(10)
         TestRun.scsi_debug_devices = Device.get_scsi_debug_devices()
-
-    def teardown(self):
-        unload_output = os_utils.unload_kernel_module(self.module_name)
-        if unload_output.exit_code != 0 \
-                and "is not currently loaded" not in unload_output.stderr:
-            TestRun.LOGGER.info(f"Failed to unload {self.module_name} module\n{unload_output}")
 
 
 plugin_class = ScsiDebug
