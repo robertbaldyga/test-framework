@@ -2,9 +2,10 @@
 # Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
+import os
 
 from core.test_run import TestRun
-from test_tools import disk_utils
+from test_tools import disk_utils, fs_utils
 from test_tools.disk_utils import get_device_filesystem_type
 from test_utils.io_stats import IoStats
 from test_utils.size import Size, Unit
@@ -58,6 +59,13 @@ class Device:
 
     def get_io_stats(self):
         return IoStats.get_io_stats(self.system_path.replace('/dev/', ''))
+
+    def set_max_io_size(self, new_max_io_size: Size):
+        TestRun.LOGGER.info(
+            f"Setting max_sectors_kb for device {self.get_device_id()} to {new_max_io_size}")
+        path = os.path.join(disk_utils.get_sysfs_path(self.get_device_id()),
+                            'queue/max_sectors_kb')
+        fs_utils.write_file(path, str(int(new_max_io_size.get_value(Unit.KibiByte))))
 
     def __str__(self):
         return f'system path: {self.system_path}, filesystem: {self.filesystem}, ' \
