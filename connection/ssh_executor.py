@@ -23,6 +23,7 @@ class SshExecutor(BaseExecutor):
         self.port = port
         self.ssh = paramiko.SSHClient()
         self.connect(username, password, port)
+        self._check_config_for_reboot_timeout()
 
     def __del__(self):
         self.ssh.close()
@@ -88,10 +89,22 @@ class SshExecutor(BaseExecutor):
     def is_remote(self):
         return True
 
+    def _check_config_for_reboot_timeout(self):
+        if "reboot_timeout" in TestRun.config.keys():
+            self._parse_timeout_to_int()
+        else:
+            self.reboot_timeout = None
+
+    def _parse_timeout_to_int(self):
+        self.reboot_timeout = int(TestRun.config["reboot_timeout"])
+        if self.reboot_timeout < 0:
+            raise ValueError("Reboot timeout cannot be negative.")
+
     def reboot(self):
         self.run("reboot")
         self.wait_for_connection_loss()
-        self.wait_for_connection()
+        self.wait_for_connection(timedelta(seconds=self.reboot_timeout)) \
+            if self.reboot_timeout is not None else self.wait_for_connection()
 
     def is_active(self):
         try:
