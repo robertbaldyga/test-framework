@@ -7,7 +7,7 @@ import time
 from datetime import timedelta, datetime
 import os
 
-from aenum import IntFlag, Enum
+from aenum import IntFlag, Enum, IntEnum
 from packaging import version
 
 from storage_devices.device import Device
@@ -23,6 +23,95 @@ class DropCachesMode(IntFlag):
     PAGECACHE = 1
     SLAB = 2
     ALL = PAGECACHE | SLAB
+
+
+class Runlevel(IntEnum):
+    """
+        Halt the system.
+        SysV Runlevel: 0
+        systemd Target: runlevel0.target, poweroff.target
+    """
+    runlevel0 = 0
+
+    """
+        Single user mode.
+        SysV Runlevel: 1, s, single
+        systemd Target: runlevel1.target, rescue.target
+    """
+    runlevel1 = 1
+
+    """
+        User-defined/Site-specific runlevels. By default, identical to 3.
+        SysV Runlevel: 2, 4
+        systemd Target: runlevel2.target, runlevel4.target, multi-user.target
+    """
+    runlevel2 = 2
+
+    """
+        Multi-user, non-graphical. Users can usually login via multiple consoles or via the network.
+        SysV Runlevel: 3
+        systemd Target: runlevel3.target, multi-user.target
+    """
+    runlevel3 = 3
+
+    """
+        Multi-user, graphical. Usually has all the services of runlevel 3 plus a graphical login.
+        SysV Runlevel: 5
+        systemd Target: runlevel5.target, graphical.target
+    """
+    runlevel5 = 5
+
+    """
+        Reboot
+        SysV Runlevel: 6
+        systemd Target: runlevel6.target, reboot.target
+    """
+    runlevel6 = 6
+
+    """
+        Emergency shell
+        SysV Runlevel: emergency
+        systemd Target: emergency.target
+    """
+    emergency = 7
+
+
+class SystemManagerType(Enum):
+    sysv = 0
+    systemd = 1
+
+
+def get_system_manager():
+    output = TestRun.executor.run_expect_success("ps -p 1").stdout
+    type = output.split('\n')[1].split()[3]
+    if type == "init":
+        return SystemManagerType.sysv
+    elif type == "systemd":
+        return SystemManagerType.systemd
+    raise Exception(f"Unknown system manager type ({type}).")
+
+
+def change_runlevel(runlevel: Runlevel):
+    if runlevel == get_runlevel():
+        return
+    if Runlevel.runlevel0 < runlevel < Runlevel.runlevel6:
+        system_manager = get_system_manager()
+        if system_manager == SystemManagerType.systemd:
+            TestRun.executor.run_expect_success(f"systemctl set-default {runlevel.name}.target")
+        else:
+            TestRun.executor.run_expect_success(
+                f"sed -i 's/^.*id:.*$/id:{runlevel.value}:initdefault: /' /etc/inittab")
+    TestRun.executor.run_expect_success(f"init {runlevel.value}")
+
+
+def get_runlevel():
+    result = TestRun.executor.run_expect_success("runlevel")
+    try:
+        split_output = result.stdout.split()
+        runlevel = Runlevel(int(split_output[1]))
+        return runlevel
+    except Exception:
+        raise Exception(f"Cannot parse '{result.output}' to runlevel.")
 
 
 class Udev(object):
