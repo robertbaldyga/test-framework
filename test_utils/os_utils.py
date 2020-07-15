@@ -2,7 +2,7 @@
 # Copyright(c) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
-
+import math
 import time
 from datetime import timedelta, datetime
 import os
@@ -12,17 +12,27 @@ from packaging import version
 
 from storage_devices.device import Device
 from core.test_run import TestRun
-from test_tools.fs_utils import check_if_directory_exists
+from test_tools.dd import Dd
+from test_tools.fs_utils import check_if_directory_exists, create_directory
 from test_tools.disk_utils import get_sysfs_path
 from test_utils.filesystem.file import File
+from test_utils.output import CmdException
+from test_utils.size import Size, Unit
 
 DEBUGFS_MOUNT_POINT = "/sys/kernel/debug"
+MEMORY_MOUNT_POINT = "/mnt/memspace"
 
 
 class DropCachesMode(IntFlag):
     PAGECACHE = 1
     SLAB = 2
     ALL = PAGECACHE | SLAB
+
+
+class OvercommitMemoryMode(Enum):
+    DEFAULT = 0
+    ALWAYS = 1
+    NEVER = 2
 
 
 class Runlevel(IntEnum):
@@ -129,6 +139,81 @@ class Udev(object):
 def drop_caches(level: DropCachesMode = DropCachesMode.PAGECACHE):
     TestRun.executor.run_expect_success(
         f"echo {level.value} > /proc/sys/vm/drop_caches")
+
+
+def disable_memory_affecting_functions():
+    """Disables system functions affecting memory"""
+    # Don't allow sshd to be killed in case of out-of-memory:
+    TestRun.executor.run_expect_success(
+        "echo '-1000' > /proc/`cat /var/run/sshd.pid`/oom_score_adj"
+    )
+    TestRun.executor.run_expect_success(
+        "echo -17 > /proc/`cat /var/run/sshd.pid`/oom_adj"
+    )  # deprecated
+    TestRun.executor.run_expect_success(
+        f"echo {OvercommitMemoryMode.NEVER.value} > /proc/sys/vm/overcommit_memory"
+    )
+    TestRun.executor.run_expect_success("echo '100' > /proc/sys/vm/overcommit_ratio")
+    TestRun.executor.run_expect_success(
+        "echo '64      64      32' > /proc/sys/vm/lowmem_reserve_ratio"
+    )
+    TestRun.executor.run_expect_success("swapoff --all")
+    drop_caches(DropCachesMode.SLAB)
+
+
+def defaultize_memory_affecting_functions():
+    """Sets default values to system functions affecting memory"""
+    TestRun.executor.run_expect_success(
+        f"echo {OvercommitMemoryMode.DEFAULT.value} > /proc/sys/vm/overcommit_memory"
+    )
+    TestRun.executor.run_expect_success("echo 50 > /proc/sys/vm/overcommit_ratio")
+    TestRun.executor.run_expect_success(
+        "echo '256     256     32' > /proc/sys/vm/lowmem_reserve_ratio"
+    )
+    TestRun.executor.run_expect_success("swapon --all")
+
+
+def get_free_memory():
+    """Returns free amount of memory in bytes"""
+    output = TestRun.executor.run_expect_success("free -b")
+    output = output.stdout.splitlines()
+    for line in output:
+        if 'free' in line:
+            index = line.split().index('free') + 1  # 1st row has 1 element less than following rows
+        if 'Mem' in line:
+            mem_line = line.split()
+
+    return Size(int(mem_line[index]))
+
+
+def allocate_memory(size: Size):
+    """Allocates given amount of memory"""
+    mount_ramfs()
+    TestRun.LOGGER.info(f"Allocating {size.get_value(Unit.MiB):0.2f} MiB of memory.")
+    bs = Size(1, Unit.Blocks512)
+    dd = (
+        Dd()
+        .block_size(bs)
+        .count(math.ceil(size / bs))
+        .input("/dev/zero")
+        .output(f"{MEMORY_MOUNT_POINT}/data")
+    )
+    output = dd.run()
+    if output.exit_code != 0:
+        raise CmdException("Allocating memory failed.", output)
+
+
+def mount_ramfs():
+    """Mounts ramfs to enable allocating memory space"""
+    if not check_if_directory_exists(MEMORY_MOUNT_POINT):
+        create_directory(MEMORY_MOUNT_POINT)
+    if not is_mounted(MEMORY_MOUNT_POINT):
+        TestRun.executor.run_expect_success(f"mount -t ramfs ramfs {MEMORY_MOUNT_POINT}")
+
+
+def unmount_ramfs():
+    """Unmounts ramfs and releases whole space allocated by it in memory"""
+    TestRun.executor.run_expect_success(f"umount {MEMORY_MOUNT_POINT}")
 
 
 def download_file(url, destination_dir="/tmp"):
