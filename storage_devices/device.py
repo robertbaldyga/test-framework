@@ -35,9 +35,9 @@ class Device:
             self.mount_point = mount_point_line[0:mount_point_line.find(self.system_path)].strip()
             return True
 
-    def mount(self, mount_point):
+    def mount(self, mount_point, options: [str] = None):
         if not self.is_mounted():
-            if disk_utils.mount(self, mount_point):
+            if disk_utils.mount(self, mount_point, options):
                 self.mount_point = mount_point
         else:
             raise Exception(f"Device is already mounted! Actual mount point: {self.mount_point}")
