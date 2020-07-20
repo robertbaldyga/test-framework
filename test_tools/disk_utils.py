@@ -240,11 +240,13 @@ def remove_partitions(device):
     return True
 
 
-def mount(device, mount_point):
+def mount(device, mount_point, options: [str] = None):
     if not fs_utils.check_if_directory_exists(mount_point):
         fs_utils.create_directory(mount_point, True)
     TestRun.LOGGER.info(f"Mounting device {device.system_path} to {mount_point}.")
     cmd = f"mount {device.system_path} {mount_point}"
+    if options:
+        cmd = f"{cmd} -o {','.join(options)}"
     output = TestRun.executor.run(cmd)
     if output.exit_code != 0:
         raise Exception(f"Failed to mount {device.system_path} to {mount_point}")
