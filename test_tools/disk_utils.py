@@ -11,30 +11,29 @@ from enum import Enum
 from core.test_run import TestRun
 from test_tools import fs_utils
 from test_tools.dd import Dd
-from test_utils.output import CmdException
 from test_utils.size import Size, Unit
 
 
 class Filesystem(Enum):
-    xfs = 0,
-    ext3 = 1,
+    xfs = 0
+    ext3 = 1
     ext4 = 2
 
 
 class PartitionTable(Enum):
-    msdos = 0,
+    msdos = 0
     gpt = 1
 
 
 class PartitionType(Enum):
-    efi = 0,
-    primary = 1,
-    extended = 2,
-    logical = 3,
-    lvm = 4,
-    msr = 5,
-    swap = 6,
-    standard = 7,
+    efi = 0
+    primary = 1
+    extended = 2
+    logical = 3
+    lvm = 4
+    msr = 5
+    swap = 6
+    standard = 7
     unknown = 8
 
 
