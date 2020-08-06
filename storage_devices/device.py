@@ -63,12 +63,29 @@ class Device:
     def get_io_stats(self):
         return IoStats.get_io_stats(self.system_path.replace('/dev/', ''))
 
-    def set_max_io_size(self, new_max_io_size: Size):
+    def get_sysfs_property(self, property_name):
+        path = os.path.join(disk_utils.get_sysfs_path(self.get_device_id()), "queue", property_name)
+        return TestRun.executor.run_expect_success(f"cat {path}").stdout
+
+    def set_sysfs_property(self, property_name, value):
         TestRun.LOGGER.info(
-            f"Setting max_sectors_kb for device {self.get_device_id()} to {new_max_io_size}")
-        path = os.path.join(disk_utils.get_sysfs_path(self.get_device_id()),
-                            'queue/max_sectors_kb')
-        fs_utils.write_file(path, str(int(new_max_io_size.get_value(Unit.KibiByte))))
+            f"Setting {property_name} for device {self.get_device_id()} to {value}.")
+        path = os.path.join(disk_utils.get_sysfs_path(self.get_device_id()), "queue",
+                            property_name)
+        fs_utils.write_file(path, str(value))
+
+    def set_max_io_size(self, new_max_io_size: Size):
+        self.set_sysfs_property("max_sectors_kb",
+                                int(new_max_io_size.get_value(Unit.KibiByte)))
+
+    def get_discard_granularity(self):
+        return self.get_sysfs_property("discard_granularity")
+
+    def get_discard_max_bytes(self):
+        return self.get_sysfs_property("discard_max_bytes")
+
+    def get_discard_zeroes_data(self):
+        return self.get_sysfs_property("discard_zeroes_data")
 
     def __str__(self):
         return f'system path: {self.system_path}, filesystem: {self.filesystem}, ' \
