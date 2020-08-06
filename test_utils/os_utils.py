@@ -226,15 +226,17 @@ def kill_all_io():
     # TERM signal should be used in preference to the KILL signal, since a
     # process may install a handler for the TERM signal in order to perform
     # clean-up steps before terminating in an orderly fashion.
-    TestRun.executor.run("killall -q --signal TERM dd fio")
+    TestRun.executor.run("killall -q --signal TERM dd fio blktrace")
     time.sleep(3)
-    TestRun.executor.run("killall -q --signal KILL dd fio")
-    TestRun.executor.run("kill -9 `ps aux | grep -i vdbench.* | awk '{ print $1 }'`")
+    TestRun.executor.run("killall -q --signal KILL dd fio blktrace")
+    TestRun.executor.run("kill -9 `ps aux | grep -i vdbench.* | awk '{ print $2 }'`")
 
     if TestRun.executor.run("pgrep -x dd").exit_code == 0:
         raise Exception(f"Failed to stop dd!")
     if TestRun.executor.run("pgrep -x fio").exit_code == 0:
         raise Exception(f"Failed to stop fio!")
+    if TestRun.executor.run("pgrep -x blktrace").exit_code == 0:
+        raise Exception(f"Failed to stop blktrace!")
     if TestRun.executor.run("pgrep vdbench").exit_code == 0:
         raise Exception(f"Failed to stop vdbench!")
 
