@@ -4,8 +4,9 @@
 #
 
 
-import pytest
 from IPy import IP
+import traceback
+import pytest
 
 from connection.ssh_executor import SshExecutor
 from connection.local_executor import LocalExecutor
@@ -13,9 +14,9 @@ from storage_devices.disk import Disk
 from test_utils import disk_finder
 from test_utils.dut import Dut
 from core.plugins import PluginManager
+from core.pair_testing import generate_pair_testing_testcases, register_testcases
 from log.base_log import BaseLogResult
 import core.test_run
-import traceback
 
 
 TestRun = core.test_run.TestRun
@@ -38,6 +39,9 @@ def __configure(cls, config):
     config.addinivalue_line(
         "markers",
         "os_dependent: run test only if its OS dependent, otherwise skip"
+    )
+    config.addinivalue_line(
+        "parametrizex(argname, argvalues): sparse parametrized testing"
     )
 
 
@@ -162,6 +166,40 @@ def __makereport(cls, item, call, res):
 
 
 TestRun.makereport = __makereport
+
+
+@classmethod
+def __generate_tests(cls, metafunc):
+    parametrizex_marks = [
+        mark for mark in metafunc.function.pytestmark if mark.name == "parametrizex"
+    ]
+
+    argnames = []
+    argvals = []
+    for mark in parametrizex_marks:
+        argnames.append(mark.args[0])
+        argvals.append(list(mark.args[1]))
+
+    if metafunc.config.getoption("--parametrization-type") == "full":
+        for name, values in zip(argnames, argvals):
+            metafunc.parametrize(name, values)
+    elif metafunc.config.getoption("--parametrization-type") == "pair":
+        test_cases = generate_pair_testing_testcases(*argvals)
+
+        register_testcases(metafunc, argnames, test_cases)
+    else:
+        raise Exception("Not supported parametrization type")
+
+
+TestRun.generate_tests = __generate_tests
+
+
+@classmethod
+def __addoption(cls, parser):
+    parser.addoption("--parametrization-type", choices=["pair", "full"], default="pair")
+
+
+TestRun.addoption = __addoption
 
 
 @classmethod
