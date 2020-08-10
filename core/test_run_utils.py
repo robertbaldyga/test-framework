@@ -35,6 +35,10 @@ def __configure(cls, config):
         "markers",
         "remote_only: run test only in case of remote execution, otherwise skip"
     )
+    config.addinivalue_line(
+        "markers",
+        "os_dependent: run test only if its OS dependent, otherwise skip"
+    )
 
 
 TestRun.configure = __configure
