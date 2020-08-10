@@ -156,6 +156,8 @@ def __makereport(cls, item, call, res):
         res.outcome = "failed"
         # To print additional message in final test report, assgin it to res.longrepr
 
+    cls.LOGGER.generate_summary(item, cls.config.get('scope'))
+
 
 TestRun.makereport = __makereport
 

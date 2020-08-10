@@ -193,3 +193,14 @@ class Log(HtmlLogManager, metaclass=Singleton):
             except Exception as e:
                 TestRun.LOGGER.warning(f"There was a problem during gathering {log_name} log.\n"
                                        f"{str(e)}")
+
+    def generate_summary(self, item, scope_tag):
+        import json
+        summary_path = os.path.join(self.base_dir, 'info.json')
+        with open(summary_path, "w+") as summary:
+            json.dump({
+                'module': os.path.relpath(item.fspath, os.getcwd()),
+                'function': item.name,
+                'scope': scope_tag,
+                'status': self.get_result().name
+            }, summary)
