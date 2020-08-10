@@ -66,6 +66,8 @@ def discover_ssd_devices(block_devices, devices_res):
         device_path = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep DevicePath").stdout.split()[2]
         dev = device_path.replace('/dev/', '')
+        if dev not in block_devices:
+            continue
         serial_number = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep SerialNumber").stdout.split()[2].strip()
         if 'nvme' not in device_path:
