@@ -180,9 +180,14 @@ TestRun.makereport = __makereport
 
 @classmethod
 def __generate_tests(cls, metafunc):
+    marks = getattr(metafunc.function, "pytestmark", [])
+
     parametrizex_marks = [
-        mark for mark in metafunc.function.pytestmark if mark.name == "parametrizex"
+        mark for mark in marks if mark.name == "parametrizex"
     ]
+
+    if not parametrizex_marks:
+        return
 
     argnames = []
     argvals = []
