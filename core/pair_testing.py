@@ -27,8 +27,9 @@
 
 
 from itertools import product, combinations
-from random import shuffle
+import random
 
+from core.test_run import TestRun
 
 def testcase_id(param_set):
     if len(param_set.values) == 1:
@@ -55,7 +56,8 @@ def generate_pair_testing_testcases(*argvals):
 
     # generate all possible test cases
     all_test_cases = list(product(*argvals))
-    shuffle(all_test_cases)
+    random.seed(TestRun.random_seed)
+    random.shuffle(all_test_cases)
 
     used_pairs = set()
     for tc in all_test_cases:

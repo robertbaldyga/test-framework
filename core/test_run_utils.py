@@ -7,6 +7,8 @@
 from IPy import IP
 import traceback
 import pytest
+import random
+import sys
 
 from connection.ssh_executor import SshExecutor
 from connection.local_executor import LocalExecutor
@@ -41,8 +43,11 @@ def __configure(cls, config):
         "os_dependent: run test only if its OS dependent, otherwise skip"
     )
     config.addinivalue_line(
+        "markers",
         "parametrizex(argname, argvalues): sparse parametrized testing"
     )
+
+    cls.random_seed = config.getoption("--random-seed") or random.randrange(sys.maxsize)
 
 
 TestRun.configure = __configure
@@ -139,6 +144,9 @@ def __setup(cls):
                         f"{str(ex)}\n{traceback.format_exc()}")
     cls.__setup_disks()
 
+    TestRun.LOGGER.info(f"Re-seeding random number generator with seed: {cls.random_seed}")
+    random.seed(cls.random_seed)
+
     cls.plugin_manager.hook_post_setup()
 
 
@@ -197,6 +205,7 @@ TestRun.generate_tests = __generate_tests
 @classmethod
 def __addoption(cls, parser):
     parser.addoption("--parametrization-type", choices=["pair", "full"], default="pair")
+    parser.addoption("--random-seed", default=None)
 
 
 TestRun.addoption = __addoption
