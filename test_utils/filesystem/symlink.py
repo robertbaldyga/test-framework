@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 from core.test_run import TestRun
+from test_tools.fs_utils import readlink
 from test_utils.filesystem.file import File
 
 
@@ -19,4 +20,4 @@ class Symlink(File):
         return output.stdout.split()[0]
 
     def get_target(self):
-        return TestRun.executor.run_expect_success(f"readlink -f {self.full_path}").stdout
+        return readlink(self.full_path)

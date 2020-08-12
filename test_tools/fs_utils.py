@@ -281,6 +281,12 @@ def parse_ls_output(ls_output, dir_path=''):
     return fs_items
 
 
+def readlink(link: str, options="--canonicalize-existing"):
+    return TestRun.executor.run_expect_success(
+        f"readlink {options} {link}"
+    ).stdout
+
+
 def create_random_test_file(target_file_path: str,
                             file_size: Size = Size(1, Unit.MebiByte),
                             random: bool = True):
