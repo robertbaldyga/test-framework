@@ -48,6 +48,7 @@ def __configure(cls, config):
     )
 
     cls.random_seed = config.getoption("--random-seed") or random.randrange(sys.maxsize)
+    random.seed(cls.random_seed)
 
 
 TestRun.configure = __configure
@@ -187,6 +188,7 @@ def __generate_tests(cls, metafunc):
     ]
 
     if not parametrizex_marks:
+        random.seed(TestRun.random_seed)
         return
 
     argnames = []
@@ -204,6 +206,8 @@ def __generate_tests(cls, metafunc):
         register_testcases(metafunc, argnames, test_cases)
     else:
         raise Exception("Not supported parametrization type")
+
+    random.seed(TestRun.random_seed)
 
 
 TestRun.generate_tests = __generate_tests
