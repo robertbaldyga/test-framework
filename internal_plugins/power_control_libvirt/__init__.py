@@ -2,7 +2,7 @@
 # Copyright(c) 2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
-
+from connection.local_executor import LocalExecutor
 from connection.ssh_executor import SshExecutor
 from core.test_run import TestRun
 
@@ -22,7 +22,7 @@ class PowerControlPlugin:
                 self.config.get('port', 22)
             )
         else:
-            cls.executor = LocalExecutor()
+            self.executor = LocalExecutor()
 
     def post_setup(self):
         pass

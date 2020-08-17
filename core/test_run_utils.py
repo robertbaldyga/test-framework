@@ -104,7 +104,7 @@ TestRun.__setup_disks = __setup_disks
 
 
 @classmethod
-def __setup(cls):
+def __presetup(cls):
     cls.plugin_manager = PluginManager(cls.item, cls.config)
     cls.plugin_manager.hook_pre_setup()
 
@@ -130,6 +130,12 @@ def __setup(cls):
     else:
         TestRun.block("Execution type (local/ssh) is missing in DUT config!")
 
+
+TestRun.presetup = __presetup
+
+
+@classmethod
+def __setup(cls):
     if list(cls.item.iter_markers(name="remote_only")):
         if not cls.executor.is_remote():
             pytest.skip()

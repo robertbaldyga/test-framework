@@ -22,7 +22,6 @@ class SshExecutor(BaseExecutor):
         self.password = password
         self.port = port
         self.ssh = paramiko.SSHClient()
-        self.connect(username, password, port)
         self._check_config_for_reboot_timeout()
 
     def __del__(self):

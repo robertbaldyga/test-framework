@@ -33,7 +33,7 @@ class BaseExecutor:
     def is_active(self):
         return True
 
-    def wait_for_connection(self):
+    def wait_for_connection(self, timeout: timedelta = None):
         pass
 
     def run(self, command, timeout: timedelta = timedelta(minutes=30)):
