@@ -58,7 +58,7 @@ class SshExecutor(BaseExecutor):
         return Output(stdout.read(), stderr.read(), stdout.channel.recv_exit_status())
 
     def _rsync(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
-               timeout: timedelta = timedelta(seconds=30), dut_to_controller=False):
+               timeout: timedelta = timedelta(seconds=90), dut_to_controller=False):
         options = []
 
         if delete:
@@ -74,14 +74,17 @@ class SshExecutor(BaseExecutor):
         src_to_dst = f"{self.user}@{self.ip}:{src} {dst} " if dut_to_controller else\
                      f"{src} {self.user}@{self.ip}:{dst} "
 
-        completed_process = subprocess.run(
-            f'sshpass -p "{self.password}" rsync -r -e "ssh -p {self.port} '
-            f'-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" '
-            + src_to_dst + f'{" ".join(options)}',
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=timeout.total_seconds())
+        try:
+            completed_process = subprocess.run(
+                f'sshpass -p "{self.password}" rsync -r -e "ssh -p {self.port} '
+                f'-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" '
+                + src_to_dst + f'{" ".join(options)}',
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=timeout.total_seconds())
+        except Exception as e:
+            TestRun.LOGGER.exception(f"Exception occurred during rsync process.\n{e}")
 
         if completed_process.returncode:
             raise Exception(f"rsync failed:\n{completed_process}")
