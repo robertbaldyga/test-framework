@@ -206,6 +206,4 @@ class Log(HtmlLogManager, metaclass=Singleton):
                 'status': self.get_result().name,
                 'path': os.path.normpath(self.base_dir)
             }
-            sha = hashlib.sha1(json.dumps(data, sort_keys=True).encode("UTF-8"))
-            data['hash'] = sha.hexdigest()
             json.dump(data, summary)
