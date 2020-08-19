@@ -168,6 +168,10 @@ def __makereport(cls, item, call, res):
             cls.LOGGER.blocked(msg)
         else:
             cls.LOGGER.exception(msg)
+    elif res.when == "setup" and res.failed:
+        msg = f"{call.excinfo.type.__name__}: {call.excinfo.value}"
+        cls.LOGGER.exception(msg)
+        res.outcome = "failed"
 
     if res.when == "call" and cls.LOGGER.get_result() == BaseLogResult.FAILED:
         res.outcome = "failed"
