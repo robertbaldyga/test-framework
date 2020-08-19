@@ -179,6 +179,9 @@ def __makereport(cls, item, call, res):
         cls.LOGGER.exception(msg)
         res.outcome = "failed"
 
+    if res.outcome == "skipped":
+        cls.LOGGER.skip("Test skipped.")
+
     if res.when == "call" and cls.LOGGER.get_result() == BaseLogResult.FAILED:
         res.outcome = "failed"
         # To print additional message in final test report, assgin it to res.longrepr
@@ -234,7 +237,8 @@ TestRun.addoption = __addoption
 
 @classmethod
 def __teardown(cls):
-    cls.plugin_manager.hook_teardown()
+    if cls.plugin_manager:
+        cls.plugin_manager.hook_teardown()
 
 
 TestRun.teardown = __teardown
