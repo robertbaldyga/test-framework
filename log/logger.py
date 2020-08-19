@@ -168,15 +168,15 @@ class Log(HtmlLogManager, metaclass=Singleton):
         decorator = "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //\n\n"
         message = f"\n\n\n{decorator}{step_name}\n\n{decorator}\n"
 
-        if "serial_monitor" in TestRun.plugins and \
-                TestRun.plugins["serial_monitor"] is not None:
-            TestRun.plugins["serial_monitor"].send_to_serial(message)
+        try:
+            serial_monitor = TestRun.plugin_manager.get_plugin("serial_monitor")
+            serial_monitor.send_to_serial(message)
+        except (KeyError, AttributeError):
+            pass
         self.write_to_command_log(message)
 
     def get_additional_logs(self):
         from core.test_run import TestRun
-        from connection.ssh_executor import SshExecutor
-        from connection.local_executor import LocalExecutor
         from test_tools.fs_utils import check_if_file_exists
         messages_log = "/var/log/messages"
         if not check_if_file_exists(messages_log):

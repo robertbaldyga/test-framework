@@ -16,7 +16,7 @@ class TestRun:
     dut = None
     executor = None
     LOGGER: Log = None
-    plugins = {}
+    plugin_manager = None
 
     @classmethod
     def step(cls, message):
