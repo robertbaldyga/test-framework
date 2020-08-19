@@ -194,7 +194,7 @@ class Log(HtmlLogManager, metaclass=Singleton):
                 TestRun.LOGGER.warning(f"There was a problem during gathering {log_name} log.\n"
                                        f"{str(e)}")
 
-    def generate_summary(self, item, scope):
+    def generate_summary(self, item, meta):
         import json
         import hashlib
         summary_path = os.path.join(self.base_dir, 'info.json')
@@ -202,10 +202,8 @@ class Log(HtmlLogManager, metaclass=Singleton):
             data = {
                 'module': os.path.relpath(item.fspath, os.getcwd()),
                 'function': item.name,
-                'scope': scope,
+                'meta': meta,
                 'status': self.get_result().name,
                 'path': os.path.normpath(self.base_dir)
             }
-            sha = hashlib.sha1(json.dumps(data, sort_keys=True).encode("UTF-8"))
-            data['hash'] = sha.hexdigest()
             json.dump(data, summary)
