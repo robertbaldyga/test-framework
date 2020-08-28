@@ -13,6 +13,7 @@ from test_utils.size import Size, Unit
 
 class Device:
     def __init__(self, path):
+        path = fs_utils.readlink(path)
         self.size = Size(disk_utils.get_size(path.replace('/dev/', '')), Unit.Byte)
         self.system_path = path
         self.filesystem = get_device_filesystem_type(path)
