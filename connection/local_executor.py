@@ -24,7 +24,7 @@ class LocalExecutor(BaseExecutor):
                       completed_process.returncode)
 
     def _rsync(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
-               timeout: timedelta = timedelta(seconds=30), dut_to_controller=False):
+               timeout: timedelta = timedelta(seconds=90), dut_to_controller=False):
         options = []
 
         if delete:
@@ -37,9 +37,12 @@ class LocalExecutor(BaseExecutor):
         for exclude in exclude_list:
             options.append(f"--exclude {exclude}")
 
-        subprocess.run(
+        completed_process = subprocess.run(
             f'rsync -r {src} {dst} {" ".join(options)}',
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout.total_seconds())
+
+        if completed_process.returncode:
+            raise Exception(f"rsync failed:\n{completed_process}")

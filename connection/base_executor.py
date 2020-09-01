@@ -20,11 +20,11 @@ class BaseExecutor:
         raise NotImplementedError()
 
     def rsync_to(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
-                 timeout: timedelta = timedelta(seconds=30)):
+                 timeout: timedelta = timedelta(seconds=90)):
         return self._rsync(src, dst, delete, symlinks, checksum, exclude_list, timeout, False)
 
     def rsync_from(self, src, dst, delete=False, symlinks=False, checksum=False, exclude_list=[],
-                   timeout: timedelta = timedelta(seconds=30)):
+                   timeout: timedelta = timedelta(seconds=90)):
         return self._rsync(src, dst, delete, symlinks, checksum, exclude_list, timeout, True)
 
     def is_remote(self):
