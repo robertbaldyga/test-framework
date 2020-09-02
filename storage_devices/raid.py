@@ -10,7 +10,7 @@ from storage_devices.device import Device
 from storage_devices.disk import Disk
 from test_tools.fs_utils import readlink
 from test_tools.mdadm import Mdadm
-from test_utils.size import Size
+from test_utils.size import Size, Unit
 
 
 def get_devices_paths_string(devices: [Device]):
@@ -85,12 +85,19 @@ class Raid(Disk):
         self.array_devices = array_devices if array_devices else volume_devices.copy()
         self.volume_devices = volume_devices
         self.partitions = []
+        self.__block_size = None
 
     def __eq__(self, other):
         try:
             return self.uuid == other.uuid
         except AttributeError:
             return False
+
+    @property
+    def block_size(self):
+        if not self.__block_size:
+            self.__block_size = Unit(int(self.get_sysfs_property("logical_block_size")))
+        return self.__block_size
 
     def stop(self):
         Mdadm.stop(self.system_path)
