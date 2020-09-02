@@ -10,7 +10,6 @@ from storage_devices.device import Device
 from storage_devices.disk import Disk
 from test_tools.fs_utils import readlink
 from test_tools.mdadm import Mdadm
-from test_utils.output import CmdException
 from test_utils.size import Size
 
 
@@ -134,7 +133,6 @@ class Raid(Disk):
                              f"{raid_conf.number_of_devices} devices")
 
         md_dir_path = "/dev/md/"
-
         array_devices = devices
         volume_devices = devices[:raid_conf.number_of_devices]
 
@@ -144,17 +142,12 @@ class Raid(Disk):
                 metadata=raid_conf.metadata,
                 number_of_devices=len(array_devices)
             )
-            container_output = Mdadm.create(container_conf, get_devices_paths_string(array_devices))
-            if container_output.exit_code != 0:
-                raise CmdException(f"Failed to start {raid_conf.metadata.value} container",
-                                   container_output)
+            Mdadm.create(container_conf, get_devices_paths_string(array_devices))
 
         if not raid_conf.name:
             raid_conf.name = cls.__get_unique_name()
 
-        raid_output = Mdadm.create(raid_conf, get_devices_paths_string(volume_devices))
-        if raid_output.exit_code != 0:
-            raise CmdException(f"Failed to start RAID volume", raid_output)
+        Mdadm.create(raid_conf, get_devices_paths_string(volume_devices))
 
         raid_link = md_dir_path + raid_conf.name
         raid = [r for r in Mdadm.examine_result() if r["path"] == readlink(raid_link)][0]

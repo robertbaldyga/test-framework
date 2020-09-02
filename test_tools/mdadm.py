@@ -6,7 +6,6 @@ import re
 
 from core.test_run import TestRun
 from test_tools.fs_utils import readlink
-from test_utils.output import CmdException
 from test_utils.size import Unit
 
 
@@ -35,20 +34,18 @@ class Mdadm:
         if conf.size:
             cmd += f"--size={int(conf.size.get_value(Unit.KibiByte))} "
         cmd += device_paths
-        return TestRun.executor.run(cmd)
+        return TestRun.executor.run_expect_success(cmd)
 
     @staticmethod
     def detail(raid_device_paths: str):
         if not raid_device_paths:
             raise ValueError("Provide paths of RAID devices to show details for.")
         cmd = f"mdadm --detail {raid_device_paths}"
-        return TestRun.executor.run(cmd)
+        return TestRun.executor.run_expect_success(cmd)
 
     @classmethod
     def detail_result(cls, raid_device_paths: str):
         output = cls.detail(raid_device_paths)
-        if output.exit_code != 0:
-            raise CmdException(f"Failed to display details for {raid_device_paths}", output)
         details = {}
         for device_details in re.split("^/dev/", output.stdout, flags=re.MULTILINE):
             if not device_details:
@@ -72,13 +69,11 @@ class Mdadm:
         if brief:
             cmd += "--brief "
         cmd += (device_paths if device_paths else "--scan")
-        return TestRun.executor.run(cmd)
+        return TestRun.executor.run_expect_success(cmd)
 
     @classmethod
     def examine_result(cls, device_paths: str = None):
         output = cls.examine(device_paths=device_paths)
-        if output.exit_code != 0:
-            raise CmdException(f"Failed to examine devices {device_paths}", output)
         raids = []
 
         uuid_path_prefix = "/dev/disk/by-id/md-uuid-"
@@ -111,12 +106,12 @@ class Mdadm:
     @staticmethod
     def stop(device_paths: str = None):
         cmd = f"mdadm --stop " + (device_paths if device_paths else "--scan")
-        return TestRun.executor.run(cmd)
+        return TestRun.executor.run_expect_success(cmd)
 
     @staticmethod
     def zero_superblock(device_paths: str):
         cmd = f"mdadm --zero-superblock {device_paths}"
-        return TestRun.executor.run(cmd)
+        return TestRun.executor.run_expect_success(cmd)
 
     @staticmethod
     def __parse_devices(details: str):
