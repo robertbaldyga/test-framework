@@ -322,6 +322,7 @@ class FioParam(LinuxCommand):
             raise Exception(f"Exception occurred while trying to execute fio, exit_code:"
                             f"{fio_output.exit_code}.\n"
                             f"stdout: {fio_output.stdout}\nstderr: {fio_output.stderr}")
+        TestRun.executor.run(f"sed -i '/^[[:alnum:]]/d' {self.fio.fio_file}")  # Remove warnings
         out = self.command_executor.run_expect_success(f"cat {self.fio.fio_file}").stdout
         return self.get_results(out)
 
