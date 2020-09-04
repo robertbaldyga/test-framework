@@ -11,6 +11,7 @@ from enum import Enum
 from core.test_run import TestRun
 from test_tools import fs_utils
 from test_tools.dd import Dd
+from test_utils.output import CmdException
 from test_utils.size import Size, Unit
 
 
@@ -293,8 +294,15 @@ def wipe_filesystem(device, force=True):
 
 
 def get_device_filesystem_type(device_system_path):
-    cmd = f'lsblk -l -o NAME,FSTYPE | grep "{device_system_path.replace("/dev/", "")} "'
-    stdout = TestRun.executor.run_expect_success(cmd).stdout
+    cmd = f'lsblk -l -o NAME,FSTYPE | uniq | grep "{device_system_path.replace("/dev/", "")} "'
+    try:
+        stdout = TestRun.executor.run_expect_success(cmd).stdout
+    except CmdException:
+        # unusual devices might not be listed in output (i.e. RAID containers)
+        if TestRun.executor.run(f"test -b {device_system_path}").exit_code != 0:
+            raise
+        else:
+            return None
     split_stdout = stdout.strip().split()
     if len(split_stdout) <= 1:
         return None

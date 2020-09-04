@@ -5,7 +5,7 @@
 
 from core.test_run import TestRun
 from test_tools import disk_utils
-from test_tools.fs_utils import check_if_file_exists
+from test_tools.fs_utils import check_if_file_exists, readlink
 from test_utils import os_utils
 from test_utils.output import CmdException
 
@@ -66,6 +66,8 @@ def discover_ssd_devices(block_devices, devices_res):
         device_path = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep DevicePath").stdout.split()[2]
         dev = device_path.replace('/dev/', '')
+        if dev not in block_devices:
+            continue
         serial_number = TestRun.executor.run_expect_success(
             f"isdct show -intelssd {i} | grep SerialNumber").stdout.split()[2].strip()
         if 'nvme' not in device_path:
@@ -132,8 +134,7 @@ def find_sata_ssd_device_path(serial_number, block_devices):
 
 def get_system_disks():
     system_device = TestRun.executor.run_expect_success('mount | grep " / "').stdout.split()[0]
-    readlink_output = \
-        TestRun.executor.run_expect_success(f'readlink -f {system_device}').stdout
+    readlink_output = readlink(system_device)
     device_name = readlink_output.split('/')[-1]
     sys_block_path = os_utils.get_sys_block_path()
     used_device_names = __get_slaves(device_name)
@@ -142,8 +143,7 @@ def get_system_disks():
     disk_names = []
     for device_name in used_device_names:
         if check_if_file_exists(f'{sys_block_path}/{device_name}/partition'):
-            parent_device = TestRun.executor.run_expect_success(
-                f'readlink -f {sys_block_path}/{device_name}/..').stdout.split('/')[-1]
+            parent_device = readlink(f'{sys_block_path}/{device_name}/..').split('/')[-1]
             disk_names.append(parent_device)
         else:
             disk_names.append(device_name)

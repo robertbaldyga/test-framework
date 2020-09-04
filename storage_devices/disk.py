@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 import itertools
-from enum import IntEnum
-
-from test_utils import disk_finder
-from test_utils.output import CmdException
-from test_utils.size import Unit
-from test_tools import disk_utils, fs_utils
-from storage_devices.device import Device
-from datetime import timedelta
-from test_utils.os_utils import wait
-from core.test_run import TestRun
 import json
 import re
+from datetime import timedelta
+from enum import IntEnum
+
+from core.test_run import TestRun
+from storage_devices.device import Device
+from test_tools import disk_utils, fs_utils
+from test_utils import disk_finder
+from test_utils.os_utils import wait
+from test_utils.output import CmdException
+from test_utils.size import Unit
 
 
 class DiskType(IntEnum):
@@ -98,6 +98,7 @@ class Disk(Device):
         block_size,
     ):
         Device.__init__(self, path)
+        path = fs_utils.readlink(path)
         self.device_name = path.split('/')[-1]
         self.serial_number = serial_number
         self.block_size = Unit(block_size)
