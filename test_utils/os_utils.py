@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 import math
+import os
 import time
 from datetime import timedelta, datetime
-import os
 
 from aenum import IntFlag, Enum, IntEnum
 from packaging import version
 
-from storage_devices.device import Device
 from core.test_run import TestRun
+from storage_devices.device import Device
 from test_tools.dd import Dd
-from test_tools.fs_utils import check_if_directory_exists, create_directory
 from test_tools.disk_utils import get_sysfs_path
+from test_tools.fs_utils import check_if_directory_exists, create_directory, check_if_file_exists
 from test_utils.filesystem.file import File
 from test_utils.output import CmdException
 from test_utils.size import Size, Unit
@@ -259,6 +259,13 @@ def load_kernel_module(module_name, module_args: {str, str}=None):
 def unload_kernel_module(module_name, unload_method: ModuleRemoveMethod = ModuleRemoveMethod.rmmod):
     cmd = f"{unload_method.value} {module_name}"
     return TestRun.executor.run_expect_success(cmd)
+
+
+def get_kernel_module_parameter(module_name, parameter):
+    param_file_path = f"/sys/module/{module_name}/parameters/{parameter}"
+    if not check_if_file_exists(param_file_path):
+        raise FileNotFoundError(f"File {param_file_path} does not exist!")
+    return File(param_file_path).read()
 
 
 def is_mounted(path: str):
