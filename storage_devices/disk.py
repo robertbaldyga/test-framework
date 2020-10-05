@@ -145,7 +145,7 @@ class Disk(Device):
         if not wait(lambda: should_be_visible == self.is_detected(),
                     timedelta(minutes=1),
                     timedelta(seconds=1)):
-            raise Exception(f"Timeout occurred while tying to "
+            raise Exception(f"Timeout occurred while trying to "
                             f"{'plug' if should_be_visible else 'unplug'} disk.")
 
     def plug(self):

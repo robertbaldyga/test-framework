@@ -124,7 +124,7 @@ class SshExecutor(BaseExecutor):
                     return
                 except Exception:
                     continue
-            raise ConnectionError("Timeout occurred while tying to establish ssh connection")
+            raise ConnectionError("Timeout occurred while trying to establish ssh connection")
 
     def wait_for_connection_loss(self, timeout: timedelta = timedelta(minutes=1)):
         with TestRun.group("Waiting for DUT ssh connection loss"):
