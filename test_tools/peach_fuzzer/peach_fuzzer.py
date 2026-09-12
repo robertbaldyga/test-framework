@@ -29,7 +29,9 @@ class PeachFuzzer:
     peach_fuzzer_3_0_url = "https://sourceforge.net/projects/peachfuzz/files/Peach/3.0/" \
                            "peach-3.0.202-linux-x86_64-release.zip"
     base_dir = posixpath.join(TestRun.TEST_RUN_DATA_PATH, "Fuzzy")
+    install_dir = "/var/tmp/peach_fuzzer"
     peach_dir = "peach-3.0.202-linux-x86_64-release"
+    peach_bin = posixpath.join(install_dir, peach_dir, "peach")
     xml_config_template = os.path.join(os.path.dirname(__file__), "config_template.xml")
     xml_config_file = posixpath.join(base_dir, "fuzzerConfig.xml")
     xml_namespace = "http://peachfuzzer.com/2012/Peach"
@@ -78,7 +80,9 @@ class PeachFuzzer:
             TestRun.block("No Peach Fuzzer XML config needed to generate fuzzed values was found!")
         remove(cls.fuzzy_output_file, force=True, ignore_errors=True)
         TestRun.LOGGER.info(f"Generate {count} unique fuzzed values")
-        cmd = f"cd {cls.base_dir}; {cls.peach_dir}/peach --range 0,{count - 1} " \
+        # peach is run from base_dir because the XML config makes it write its output file to a
+        # path relative to the current working directory
+        cmd = f"cd {cls.base_dir}; {cls.peach_bin} --range 0,{count - 1} " \
               f"--seed {random.randrange(2 ** 32)} {cls.xml_config_file} > " \
               f"{cls.base_dir}/peachOutput.log"
         TestRun.executor.run_expect_success(cmd)
@@ -155,12 +159,12 @@ class PeachFuzzer:
         """
         Install Peach Fuzzer on the DUT
         """
-        create_directory(cls.base_dir, True)
+        create_directory(cls.install_dir, True)
         peach_archive = wget.download_file(
-            cls.peach_fuzzer_3_0_url, destination_dir=cls.base_dir
+            cls.peach_fuzzer_3_0_url, destination_dir=cls.install_dir
         )
         TestRun.executor.run_expect_success(
-            f'cd {cls.base_dir} && unzip -u "{peach_archive}"')
+            f'cd {cls.install_dir} && unzip -u "{peach_archive}"')
         if cls._is_installed():
             TestRun.LOGGER.info("Peach fuzzer installed successfully")
         else:
@@ -173,9 +177,9 @@ class PeachFuzzer:
         """
         if not cls._is_mono_installed():
             TestRun.block("Mono is not installed, can't continue with Peach Fuzzer!")
-        if check_if_directory_exists(posixpath.join(cls.base_dir, cls.peach_dir)):
+        if check_if_directory_exists(posixpath.join(cls.install_dir, cls.peach_dir)):
             return "Peach" in TestRun.executor.run(
-                f"cd {cls.base_dir} && {cls.peach_dir}/peach --version").stdout.strip()
+                f"{cls.peach_bin} --version").stdout.strip()
         else:
             return False
 
