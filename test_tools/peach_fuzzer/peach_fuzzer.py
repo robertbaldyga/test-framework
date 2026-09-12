@@ -38,7 +38,7 @@ class PeachFuzzer:
     fuzzy_output_file = posixpath.join(base_dir, "fuzzedParams.txt")
     tested_param_placeholder = b"{param}"
     # escape backslash first, so it doesn't interfere with escaping other characters
-    escape_chars = '\\\n"\'&|;()`<>$! '
+    escape_chars = '\\\n\t"\'&|;()`<>$!*#~ '
 
     @classmethod
     def get_fuzzed_command(cls, command_template: str, count: int):
