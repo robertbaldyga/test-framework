@@ -1,6 +1,7 @@
 #
 # Copyright(c) 2019-2021 Intel Corporation
 # Copyright(c) 2023-2024 Huawei Technologies Co., Ltd.
+# Copyright(c) 2026 Unvertical
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
@@ -62,7 +63,10 @@ class BaseExecutor:
                           command,
                           stdout_redirect_path="/dev/null",
                           stderr_redirect_path="/dev/null"):
-        command += f" > {stdout_redirect_path} 2> {stderr_redirect_path} &echo $!"
+        # Subshell makes the redirection cover compound commands too, otherwise their
+        # earlier parts keep the session output open until they finish. A simple command
+        # is executed by the subshell directly, so the PID is still the command's one.
+        command = f"({command}) > {stdout_redirect_path} 2> {stderr_redirect_path} &echo $!"
         output = self.run(command)
 
         if output is not None:
