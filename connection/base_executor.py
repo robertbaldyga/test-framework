@@ -13,6 +13,11 @@ from connection.utils.output import CmdException
 
 
 class BaseExecutor:
+    @property
+    def name(self):
+        """Identifies the DUT this executor runs commands on"""
+        return "localhost"
+
     def _execute(self, command, timeout):
         raise NotImplementedError()
 
@@ -53,8 +58,7 @@ class BaseExecutor:
         if TestRun.dut and TestRun.dut.env:
             command = f"{TestRun.dut.env} && {command}"
         command_id = TestRun.LOGGER.get_new_command_id()
-        ip_info = TestRun.dut.ip if len(TestRun.duts) > 1 else ""
-        TestRun.LOGGER.write_command_to_command_log(command, command_id, info=ip_info)
+        TestRun.LOGGER.write_command_to_command_log(command, command_id, info=self.name)
         output = self._execute(command, timeout)
         TestRun.LOGGER.write_output_to_command_log(output, command_id)
         return output

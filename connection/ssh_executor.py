@@ -27,6 +27,10 @@ class SshExecutor(BaseExecutor):
         self.ssh_config = None
         self._check_config_for_reboot_timeout()
 
+    @property
+    def name(self):
+        return self.host
+
     def __del__(self):
         self.ssh.close()
 
