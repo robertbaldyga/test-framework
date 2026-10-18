@@ -1,6 +1,7 @@
 #
 # Copyright(c) 2019-2021 Intel Corporation
 # Copyright(c) 2025 Huawei Technologies Co., Ltd.
+# Copyright(c) 2026 Unvertical
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
@@ -211,11 +212,10 @@ class Log(HtmlLogManager, metaclass=Singleton):
         TestRun.executor.run(
             f"awk '/{test_identifier}/,0' {messages_log} > {log_files['messages.log']}")
 
-        dut_identifier = TestRun.dut.ip if TestRun.dut.ip else TestRun.dut.config["host"]
         for log_name, log_source_path in log_files.items():
             try:
                 log_destination_path = os.path.join(
-                    self.base_dir, "dut_info", dut_identifier, log_name
+                    self.base_dir, "dut_info", TestRun.dut.name, log_name
                 )
                 TestRun.executor.copy_from(log_source_path, log_destination_path)
             except Exception as e:

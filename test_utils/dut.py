@@ -27,10 +27,17 @@ class Dut:
         self.spider = dut_info.get("spider")
         self.wps = dut_info.get("wps")
         self.env = dut_info.get("env")
-        self.ip = dut_info.get("ip")
+        # Resolved from host during setup
+        self.ip = None
+
+    @property
+    def name(self):
+        """Identifies the DUT in logs"""
+        return self.config.get("host", "localhost")
 
     def __str__(self):
-        dut_str = f"ip: {self.ip}\n"
+        dut_str = f"host: {self.name}\n"
+        dut_str += f"ip: {self.ip}\n"
         dut_str += f'ipmi: {self.ipmi["ip"]}\n' if self.ipmi is not None else ""
         dut_str += f'spider: {self.spider["ip"]}\n' if self.spider is not None else ""
         dut_str += (

@@ -11,7 +11,6 @@ import sys
 import traceback
 
 import pytest
-from IPy import IP
 
 import core.test_run
 from connection.local_executor import LocalExecutor
@@ -142,15 +141,8 @@ TestRun.__setup_disks = __setup_disks
 def __presetup(cls):
 
     if cls.config['type'] == 'ssh':
-        try:
-            IP(cls.config['ip'])
-            if not cls.config['host']:
-                cls.config['host'] = cls.config['ip']
-        except ValueError:
-            TestRun.block("IP address from config is in invalid format.")
-        except KeyError:
-            if 'host' not in cls.config:
-                TestRun.block("No IP address or host defined in config")
+        if not cls.config.get('host'):
+            TestRun.block("No host defined in config")
 
         port = cls.config.get('port', 22)
 
@@ -185,7 +177,7 @@ def __setup(cls):
     except Exception as ex:
         raise Exception(f"Failed to setup DUT instance:\n"
                         f"{str(ex)}\n{traceback.format_exc()}")
-    cls.dut.ip = cls.dut.ip or cls.executor.resolve_ip_address()
+    cls.dut.ip = cls.executor.resolve_ip_address()
     cls.__setup_disks()
 
     TestRun.LOGGER.info(f"Re-seeding random number generator with seed: {cls.random_seed}")
