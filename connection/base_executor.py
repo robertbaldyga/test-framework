@@ -1,6 +1,7 @@
 #
 # Copyright(c) 2019-2021 Intel Corporation
 # Copyright(c) 2023-2024 Huawei Technologies Co., Ltd.
+# Copyright(c) 2026 Unvertical
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
@@ -12,6 +13,11 @@ from connection.utils.output import CmdException
 
 
 class BaseExecutor:
+    @property
+    def name(self):
+        """Identifies the DUT this executor runs commands on"""
+        return "localhost"
+
     def _execute(self, command, timeout):
         raise NotImplementedError()
 
@@ -52,8 +58,7 @@ class BaseExecutor:
         if TestRun.dut and TestRun.dut.env:
             command = f"{TestRun.dut.env} && {command}"
         command_id = TestRun.LOGGER.get_new_command_id()
-        ip_info = TestRun.dut.ip if len(TestRun.duts) > 1 else ""
-        TestRun.LOGGER.write_command_to_command_log(command, command_id, info=ip_info)
+        TestRun.LOGGER.write_command_to_command_log(command, command_id, info=self.name)
         output = self._execute(command, timeout)
         TestRun.LOGGER.write_output_to_command_log(output, command_id)
         return output
@@ -62,7 +67,10 @@ class BaseExecutor:
                           command,
                           stdout_redirect_path="/dev/null",
                           stderr_redirect_path="/dev/null"):
-        command += f" > {stdout_redirect_path} 2> {stderr_redirect_path} &echo $!"
+        # Subshell makes the redirection cover compound commands too, otherwise their
+        # earlier parts keep the session output open until they finish. A simple command
+        # is executed by the subshell directly, so the PID is still the command's one.
+        command = f"({command}) > {stdout_redirect_path} 2> {stderr_redirect_path} &echo $!"
         output = self.run(command)
 
         if output is not None:
